@@ -8,7 +8,7 @@ Scout is a thin Next.js reader on a folder-based substrate. Workspaces, sources,
 
 ## Walkthrough
 
-A short walkthrough covers the whole product: what Scout is, how it works, and the killer moments.
+A short walkthrough covers the whole product: what Scout is, how it works, and the key moments.
 
 📺 [Watch on YouTube →](https://youtu.be/I3wXMXQvpig)
 
