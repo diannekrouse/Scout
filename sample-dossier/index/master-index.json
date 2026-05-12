@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "file_id": "welcome-001",
+      "path": "sources/markdown/welcome.md",
+      "platform": "Welcome",
+      "filename": "welcome.md",
+      "file_type": "md",
+      "date_detected": "2026-05-11",
+      "title_detected": "Welcome to Scout",
+      "total_lines": 75,
+      "total_words": 370,
+      "workspace_primary": "welcome",
+      "status": "indexed"
+    }
+  ]
+}

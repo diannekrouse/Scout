@@ -1,0 +1,14 @@
+[
+  {
+    "concept_id": "line-level-provenance",
+    "name": "Line-level provenance",
+    "category": "architecture",
+    "primary_workspace": "welcome",
+    "summary": "Every segment in Scout carries a start_line and end_line pointing back to its position in the original source file. Clicking a segment opens that exact range in the source window so you can see what came before, what came after, and confirm the chunk in its original context. This is the core property that distinguishes Scout from any other search tool. You never lose the thread back to where a thought lived.",
+    "source_segments": [
+      "welcome-001-s002"
+    ],
+    "related_concepts": [],
+    "lifecycle": "active"
+  }
+]

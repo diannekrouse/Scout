@@ -1,0 +1,278 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    @apply bg-cream text-body font-sans antialiased;
+  }
+
+  body {
+    /* Sage-mint outer wash with a sunny yellow note. */
+    background-color: #EEF4E5;
+    background-image:
+      radial-gradient(1100px 700px at 100% -5%, rgba(244, 199, 112, 0.32), transparent 60%),
+      radial-gradient(900px 800px at -10% 110%, rgba(125, 211, 160, 0.32), transparent 60%),
+      radial-gradient(700px 500px at 60% 120%, rgba(155, 201, 232, 0.10), transparent 60%);
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display text-bright tracking-tight;
+    font-weight: 700;
+  }
+
+  ::selection {
+    background: rgba(255, 179, 154, 0.4);
+    color: #1A1410;
+  }
+
+  a {
+    @apply text-bright underline-offset-4 decoration-line2 hover:decoration-peach transition-colors;
+  }
+
+  code,
+  pre,
+  kbd,
+  samp {
+    @apply font-mono;
+  }
+}
+
+@layer components {
+  .eyebrow {
+    @apply text-[10px] uppercase tracking-[0.16em] text-dim font-semibold;
+    letter-spacing: 0.16em;
+  }
+
+  .card {
+    @apply rounded-3xl border border-line bg-paper shadow-soft;
+  }
+
+  .card-pad {
+    @apply p-6;
+  }
+
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-cream/70 px-2.5 py-0.5 text-[11px] text-muted font-medium;
+  }
+
+  /* Sticker-style pill with a subtle tilt; useful for "Enter →" calls-to-action. */
+  .sticker {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold;
+    transform: rotate(-2deg);
+    box-shadow: 0 2px 6px -1px rgba(58, 46, 32, 0.12);
+  }
+
+  .btn {
+    @apply inline-flex items-center gap-2 rounded-full border border-line bg-paper px-4 py-2 text-sm text-body font-medium hover:border-peach hover:text-bright hover:shadow-softer transition-all;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center gap-2 rounded-full border border-transparent bg-bright px-4 py-2 text-sm text-cream font-medium hover:bg-body transition-colors;
+  }
+}
+
+/* Gentle halo pulse for workspace color dots — only animates when the
+   container has the `group` class and is hovered. Keeps the page calm by
+   default and adds delight on intent. */
+@keyframes halo-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.1;
+  }
+}
+
+.halo-pulse {
+  animation: halo-pulse 2s ease-in-out infinite;
+}
+
+/* Tiny float for hero illustrations — sun/cloud drift. */
+@keyframes drift {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.drift {
+  animation: drift 4s ease-in-out infinite;
+}
+
+/* Twinkle for star elements. */
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.twinkle {
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+/* =========================================================================
+   SAVANNA THEME — applied when <html data-theme="savanna">.
+   The savanna palette repurposes Tailwind's named accent classes (text-peach,
+   text-mint, text-sky, text-lilac, text-gold) so we don't have to rewire every
+   component — Tailwind classes still resolve, but to the savanna ink instead.
+
+   Palette inspiration: leopard cub in a tree, bandana green, leopard gold,
+   bright noon sky. Friendly, naturalist, distinctly NOT lab-tech.
+   ========================================================================= */
+[data-theme="savanna"] body {
+  /* Warm parchment outer wash with bandana-green, leopard-gold, sky-blue radials. */
+  background-color: #F4EAD3;
+  background-image:
+    radial-gradient(1100px 700px at 100% -5%, rgba(79, 168, 86, 0.30), transparent 60%),
+    radial-gradient(900px 800px at -10% 110%, rgba(232, 155, 92, 0.34), transparent 60%),
+    radial-gradient(700px 500px at 60% 120%, rgba(91, 163, 212, 0.20), transparent 60%);
+}
+
+[data-theme="savanna"] ::selection {
+  background: rgba(232, 155, 92, 0.45);
+  color: #1F1611;
+}
+
+[data-theme="savanna"] a {
+  text-decoration-color: rgba(79, 168, 86, 0.30);
+}
+[data-theme="savanna"] a:hover {
+  text-decoration-color: #4FA856;
+}
+
+/* ---- Recolor named accents (these names are baked into many components) ---- */
+/* "peach" → bandana green (primary accent / page header eyebrows / card halos) */
+[data-theme="savanna"] .text-peach { color: #3D8A44; }
+[data-theme="savanna"] .bg-peach { background-color: #4FA856; }
+[data-theme="savanna"] .border-peach { border-color: #4FA856; }
+[data-theme="savanna"] .hover\:border-peach:hover { border-color: #4FA856; }
+[data-theme="savanna"] .hover\:text-peach:hover { color: #4FA856; }
+[data-theme="savanna"] .decoration-peach { text-decoration-color: #4FA856; }
+[data-theme="savanna"] .hover\:decoration-peach:hover { text-decoration-color: #4FA856; }
+
+/* "mint" → leopard gold (success / "active" lifecycle / compile button start) */
+[data-theme="savanna"] .text-mint { color: #B6753A; }
+[data-theme="savanna"] .bg-mint { background-color: #E89B5C; }
+[data-theme="savanna"] .border-mint { border-color: #E89B5C; }
+[data-theme="savanna"] .hover\:border-mint:hover { border-color: #E89B5C; }
+
+/* "sky" → bright sky blue (info accent) */
+[data-theme="savanna"] .text-sky { color: #3D87B8; }
+[data-theme="savanna"] .bg-sky { background-color: #5BA3D4; }
+[data-theme="savanna"] .border-sky { border-color: #5BA3D4; }
+
+/* "lilac" → soft mauve (category / concept accent — quiet SNET-purple nod) */
+[data-theme="savanna"] .text-lilac { color: #7A5C88; }
+[data-theme="savanna"] .bg-lilac { background-color: #9B7BA8; }
+
+/* "gold" → deeper leopard ochre */
+[data-theme="savanna"] .text-gold { color: #B6753A; }
+[data-theme="savanna"] .bg-gold { background-color: #E89B5C; }
+
+/* Page background "cream" surfaces — warm parchment tone */
+[data-theme="savanna"] .bg-cream { background-color: #FAF4E6; }
+[data-theme="savanna"] .bg-cream2 { background-color: #F4EAD3; }
+
+/* Sticker shadow gets a warm leopard-gold tint */
+[data-theme="savanna"] .sticker {
+  box-shadow: 0 2px 6px -1px rgba(182, 117, 58, 0.20);
+}
+
+/* Body text gets the warm dark-brown of the savanna palette */
+[data-theme="savanna"] body {
+  color: #3A2D24;
+}
+[data-theme="savanna"] .text-body { color: #3A2D24; }
+[data-theme="savanna"] .text-bright { color: #1F1611; }
+[data-theme="savanna"] .text-muted { color: #7A6B58; }
+[data-theme="savanna"] .text-dim { color: #A8987F; }
+
+/* Borders take the warmer parchment line */
+[data-theme="savanna"] .border-line { border-color: #E8DDC2; }
+[data-theme="savanna"] .border-line2 { border-color: #D9CAA9; }
+
+/* Recolor the gradient compile-bundle button (mint→gold becomes leopard-gold→bandana-green) */
+[data-theme="savanna"] .from-mint { --tw-gradient-from: #E89B5C var(--tw-gradient-from-position); --tw-gradient-to: rgb(232 155 92 / 0); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+[data-theme="savanna"] .to-gold { --tw-gradient-to: #4FA856 var(--tw-gradient-to-position); }
+
+/* Theme-conditional visibility: anything with .savanna-only is hidden on every
+   theme except savanna, where it appears. Used for the small cub mascot in the
+   page header — keeps the leopard visible even when the right-hand band is
+   hidden by a narrow viewport. */
+.savanna-only { display: none; }
+[data-theme="savanna"] .savanna-only { display: inline-block; }
+
+/* On wide viewports the right-hand band is visible (lg breakpoint and
+   up), so hide the savanna-only mascot in the page header to avoid two
+   leopards crowding side by side. The lg:hidden class on the element kicks
+   this rule in. Specificity is bumped above the base savanna-only rule so
+   it actually wins. */
+@media (min-width: 1024px) {
+  [data-theme="savanna"] .savanna-only.lg\:hidden {
+    display: none;
+  }
+}
+
+/* The mirror of .savanna-only: hides on savanna theme, shows everywhere else.
+   Used for the page-header decor (constellation / chats / search / etc.) so
+   the cub mascot replaces them on savanna instead of crowding alongside. */
+[data-theme="savanna"] .hide-on-savanna { display: none; }
+
+/* ===== Savanna animations ===== */
+
+/* Hat tip — bigger, more visible. Rotates -12 degrees, lifts 2px, with a
+   slight scale up. Plays for 0.9s on hover. Designed to be clearly read as
+   an intentional gesture, not a hover state. */
+@keyframes hat-tip {
+  0%, 100% { transform: rotate(0deg) translateY(0) scale(1); }
+  20%      { transform: rotate(-14deg) translateY(-2.5px) scale(1.08); }
+  45%      { transform: rotate(-8deg) translateY(-1px) scale(1.04); }
+  70%      { transform: rotate(0deg) translateY(0) scale(1); }
+}
+[data-theme="savanna"] .hat-tip-on-hover:hover .hat-group {
+  animation: hat-tip 0.9s ease-in-out;
+  transform-origin: center bottom;
+}
+
+/* Wink — one of the round glasses lenses briefly closes. Sequenced AFTER
+   the hat tip (0.3s delay) so the gestures play one-two: hat tips, eye
+   winks. The lens HOLDS closed for a beat so it's visibly a wink, not just
+   a flicker. */
+@keyframes brand-wink {
+  0%, 100% {
+    transform: scaleY(1);
+    opacity: 0.9;
+  }
+  40%, 65% {
+    transform: scaleY(0.06);
+    opacity: 0.6;
+  }
+}
+[data-theme="savanna"] .hat-tip-on-hover:hover .brand-wink-eye {
+  animation: brand-wink 0.9s ease-in-out 0.3s;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+@keyframes peek {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2px); }
+}
+[data-theme="savanna"] .leopard-peek-on-hover:hover .leopard-cub {
+  animation: peek 1.2s ease-in-out;
+  transform-origin: center bottom;
+}
+

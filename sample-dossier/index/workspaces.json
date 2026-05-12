@@ -1,0 +1,11 @@
+{
+  "workspaces": [
+    {
+      "id": "welcome",
+      "name": "Welcome",
+      "color": "#E89B5C",
+      "description": "A starter workspace that explains what Scout is and how to add your own data. Replace this with your real substrate when you're ready.",
+      "glyph": "👋"
+    }
+  ]
+}

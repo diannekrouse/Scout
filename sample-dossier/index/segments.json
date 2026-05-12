@@ -1,0 +1,56 @@
+{
+  "segments": [
+    {
+      "segment_id": "welcome-001-s001",
+      "file_id": "welcome-001",
+      "source_file": "sources/markdown/welcome.md",
+      "title": "Welcome to Scout",
+      "summary": "Introduces Scout as a persistent memory layer and frames the welcome workspace as a tutorial you can use, replace, or remove.",
+      "start_line": 1,
+      "end_line": 16,
+      "word_count": 85,
+      "workspace_primary": "welcome",
+      "tags": ["welcome", "insight"],
+      "lifecycle": "active"
+    },
+    {
+      "segment_id": "welcome-001-s002",
+      "file_id": "welcome-001",
+      "source_file": "sources/markdown/welcome.md",
+      "title": "What you're looking at",
+      "summary": "Explains the substrate shape (index/ and sources/) and introduces line-level provenance as the core property that lets you click any segment and land at the exact lines in the original document.",
+      "start_line": 18,
+      "end_line": 35,
+      "word_count": 100,
+      "workspace_primary": "welcome",
+      "tags": ["architecture", "provenance", "insight"],
+      "lifecycle": "active"
+    },
+    {
+      "segment_id": "welcome-001-s003",
+      "file_id": "welcome-001",
+      "source_file": "sources/markdown/welcome.md",
+      "title": "How to add your own data",
+      "summary": "Three paths for pointing Scout at your own data: an existing substrate, building one from raw exports, or copying the welcome workspace as a template.",
+      "start_line": 37,
+      "end_line": 65,
+      "word_count": 130,
+      "workspace_primary": "welcome",
+      "tags": ["how-to", "setup"],
+      "lifecycle": "active"
+    },
+    {
+      "segment_id": "welcome-001-s004",
+      "file_id": "welcome-001",
+      "source_file": "sources/markdown/welcome.md",
+      "title": "When you are ready to remove this welcome",
+      "summary": "Three-step removal: point DOSSIER_ROOT at your real substrate, restart the dev server, and the welcome content falls away.",
+      "start_line": 67,
+      "end_line": 75,
+      "word_count": 55,
+      "workspace_primary": "welcome",
+      "tags": ["how-to", "setup"],
+      "lifecycle": "active"
+    }
+  ]
+}
