@@ -6,6 +6,8 @@ Find anything you've ever written. Drill from a single line back to the moment i
 
 Scout is a thin Next.js reader on a folder-based substrate. Workspaces, sources, concepts, and segments live in plain JSON files on disk; Scout reads them. The reader is read-only by design; ingesters and agents are separate concerns.
 
+**Scout doesn't call any AI or LLM at runtime.** It reads static substrate files and renders them. No API keys, no external services, no per-query cost. Fully deterministic; runs offline once installed.
+
 ## Walkthrough
 
 A short walkthrough covers the whole product: what Scout is, how it works, and the key moments.
