@@ -113,14 +113,6 @@ Scout ships with one built-in theme, `savanna` (warm gold and peach with a leopa
 | `/archive?state=…` | Lifecycle browser: toggle between active, archived, forgotten |
 | `/curate` | Bulk lifecycle operations |
 
-## Companion documents
-
-Three documents in `docs/` cover the design and motivation behind Scout:
-
-- `Qwestor-motivation.pdf` covers the original motivation
-- `Qwestor-product-vision.pdf` covers the high-level product vision
-- `Multi-Workspace-Memory-Layer.pdf` is the MWML design doc
-
 ## Tech
 
 - Next.js 15 (App Router)
