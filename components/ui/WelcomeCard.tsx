@@ -119,6 +119,30 @@ export default function WelcomeCard() {
             </span>
           </li>
         </ol>
+
+        <div className="mt-5 pt-4 border-t border-mint/25">
+          <div className="eyebrow text-mint mb-2">Bringing your own data?</div>
+          <p className="text-sm text-body leading-relaxed">
+            Drop sources into{" "}
+            <code className="font-mono text-bright bg-cream2/40 px-1.5 py-0.5 rounded text-xs">
+              $DOSSIER_ROOT/sources/&lt;name&gt;/
+            </code>
+            , run{" "}
+            <code className="font-mono text-bright bg-cream2/40 px-1.5 py-0.5 rounded text-xs">
+              python scripts/build-index.py
+            </code>
+            , restart Scout. See the{" "}
+            <a
+              href="https://github.com/diannekrouse/Scout/blob/main/docs/ingest-guide.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-mint hover:underline font-medium"
+            >
+              ingest guide
+            </a>{" "}
+            for Telegram, ChatGPT, Claude, PDFs.
+          </p>
+        </div>
       </div>
     </section>
   );

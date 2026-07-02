@@ -271,7 +271,7 @@ function AddWorkspaceCard() {
   return (
     <article
       className="rounded-3xl border-2 border-dashed border-line2 bg-cream/30 px-6 py-8 flex flex-col items-center justify-center text-center min-h-[260px]"
-      title="Workspaces are defined in the substrate. See README → Adding a workspace."
+      title="Drop sources into $DOSSIER_ROOT/sources/<name>/, run scripts/build-index.py, and the workspace appears here."
     >
       <span
         aria-hidden
@@ -290,14 +290,26 @@ function AddWorkspaceCard() {
           <path d="M12 8v4M12 16h.01" />
         </svg>
       </span>
-      <div className="eyebrow text-dim mb-1.5">How workspaces appear</div>
+      <div className="eyebrow text-dim mb-1.5">Add your own workspace</div>
       <p className="text-xs text-muted leading-relaxed [overflow-wrap:anywhere]">
-        Workspaces live in the substrate (
+        Drop sources into{" "}
         <span className="font-mono text-body break-all">
-          index/workspaces.json
+          $DOSSIER_ROOT/sources/&lt;name&gt;/
         </span>
-        ). The reader is read-only. Add a workspace by ingesting sources
-        for it, and it shows up here automatically.
+        , then run{" "}
+        <span className="font-mono text-body break-all">
+          scripts/build-index.py
+        </span>{" "}
+        to register them.{" "}
+        <a
+          href="https://github.com/diannekrouse/Scout/blob/main/docs/ingest-guide.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-mint hover:underline"
+        >
+          Ingest guide
+        </a>{" "}
+        covers Telegram, ChatGPT, Claude, PDFs.
       </p>
     </article>
   );

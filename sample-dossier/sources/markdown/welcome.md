@@ -1,68 +1,86 @@
 # Welcome to Scout
 
-You're looking at Scout. A persistent memory layer for years
-of LLM chats, documents, PDFs, and notes. Indexed, searchable,
-traceable to the exact line they came from.
+You're looking at Scout. A persistent memory and context layer for years
+of conversations, documents, and notes across any platform. Indexed,
+searchable, and traceable to the exact line they came from.
 
-This is the welcome workspace, a starter so Scout has something
-to show on first run. Treat it as your tutorial.
+This is the welcome workspace, a starter so Scout has something to show
+on first run. Treat it as your tutorial.
 
-Click anywhere. Open the source window. Pin something to your
-Library Card. Compile a bundle. The video walkthrough covers
-every move; this doc is the version you can read at your own
-pace.
+Click anywhere. Open the source window. Pin something to your Library
+Card. Compile a bundle. The video walkthrough covers every move; this
+doc is the version you can read at your own pace.
 
-When you're ready, point Scout at your own substrate and the
-welcome content falls away.
+When you're ready, point Scout at your own substrate and the welcome
+content falls away.
 
 ## What you're looking at
 
-Scout reads a folder structure on disk. The folder has two
-pieces:
+Scout reads a folder structure on disk. The folder has two pieces:
 
-- `index/` holds JSON files that describe your workspaces,
-  sources, segments, and concepts
-- `sources/` holds the raw markdown, text, and PDF files that
-  the index points back to
+- `index/` holds JSON files that describe your workspaces, sources,
+  segments, and concepts
+- `sources/` holds the raw markdown, text, and PDF files that the index
+  points back to
 
-You are seeing this welcome doc as the only source in the only
-workspace. When you populate Scout with your own data, you will
-see your workspaces, your sources, your concepts.
+You are seeing this welcome doc as the only source in the only workspace.
+When you populate Scout with your own data, you will see your workspaces,
+your sources, your concepts.
 
-Every segment carries a line range pointing back here. Click
-any segment card and Scout opens the exact lines in the source
-window below. That is line-level provenance. Never lose
-context again.
+Every segment carries a line range pointing back here. Click any segment
+card and Scout opens the exact lines in the source window below. That is
+line-level provenance. Never lose context again.
 
-## How to add your own data
+## Bringing in your own data
 
-Three ways to make Scout yours.
+Scout is source-agnostic. Any text-based source can feed the substrate:
+chat exports, PDFs, transcripts, notes. Two scripts do the work.
 
-### Point Scout at an existing substrate
+### Telegram to Scout in 5 steps
 
-If you already have a folder structured the way Scout expects
-(see the README for the substrate format), tell Scout where
-it lives:
+**macOS users:** Install **Telegram Lite** first. The Mac App Store version
+of Telegram blocks data exports due to Apple sandbox restrictions. In a web
+browser, Google *"Telegram Lite Mac App Store"* and click the Apple App
+Store link from the search results (searching the App Store directly does
+not surface Telegram Lite). The first time you log in, Telegram enforces a
+mandatory 24-hour security lock before export is available.
 
-```bash
-cp .env.example .env
-# edit .env and set DOSSIER_ROOT=/absolute/path/to/your/data
-```
+1. **Export a chat.** In Telegram Lite (macOS) or Telegram Desktop
+   (Windows / Linux): open a chat → three vertical dots (⋮) →
+   **Export chat history** → format: **JSON** → **Export**.
 
-Restart `npm run dev` and Scout reads from there instead.
+2. **Convert to markdown.**
 
-### Build a substrate from your raw data
+   ```bash
+   python scripts/telegram-to-md.py /path/to/result.json --output-dir $DOSSIER_ROOT/sources/telegram/
+   ```
 
-If you have ChatGPT exports, Claude exports, Google Docs, PDFs,
-or notes, an ingester turns them into the substrate format.
-The ingester is a separate concern from this reader. The reader
-is read-only by design.
+3. **Build the substrate index.**
 
-### Use this workspace as a template
+   ```bash
+   python scripts/build-index.py --dossier-root $DOSSIER_ROOT
+   ```
 
-Copy `sample-dossier/` to a new directory. Replace the files in
-`index/` and `sources/` with your own content following the
-same shape. Point Scout at the new directory.
+4. **Restart Scout** (Ctrl+C in the terminal, then `npm run dev`).
+
+5. **See your data.** A new **Telegram** workspace appears on the home
+   page with your chats indexed and searchable.
+
+### Other sources
+
+- **ChatGPT**: export via ChatGPT's Data Export, drop the markdown files
+  into `$DOSSIER_ROOT/sources/chatgpt/`
+- **Claude**: export via Anthropic's data export, drop into
+  `$DOSSIER_ROOT/sources/claude/`
+- **PDFs**: use any PDF-to-markdown tool (`pdftotext`, `marker`,
+  `docling`), drop into `$DOSSIER_ROOT/sources/pdfs/`
+
+After adding new files, always re-run
+`python scripts/build-index.py --dossier-root $DOSSIER_ROOT` to update
+the index.
+
+See `docs/ingest-guide.md` in the repo for the full walkthrough of every
+source type, including the pattern for writing new converters.
 
 ## When you are ready to remove this welcome
 
