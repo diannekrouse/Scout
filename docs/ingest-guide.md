@@ -101,27 +101,141 @@ For continuous ingest instead of periodic manual exports, run a Telegram ingeste
 
 ## ChatGPT
 
-ChatGPT has built-in data export.
+ChatGPT offers built-in data export as JSON. Scout ships a converter.
+
+### Export from ChatGPT
 
 1. In ChatGPT: **Settings → Data controls → Export data**
-2. You'll get an email with a download link (usually within 24 hours)
-3. Unzip the download; look for `conversations.json` or the individual `.html` files
+2. You'll receive an email with a download link (usually within 24 hours)
+3. Unzip the download; you're looking for `conversations.json` at the top level
 
-Two paths:
+### Convert to markdown
 
-**If you want to drop straight in:** the export includes markdown-friendly `.md` files (or you can convert the JSON with any small script). Drop them into `sources/chatgpt/`.
+```bash
+python scripts/chatgpt-to-md.py path/to/conversations.json --output-dir $DOSSIER_ROOT/sources/chatgpt/
+```
 
-**If you want to write a converter:** structure it the same way as the Telegram converter — group by conversation, one file per conversation or per month.
+Output structure:
 
-## Claude
+```
+$DOSSIER_ROOT/sources/chatgpt/
+├── 2024-11-15-brainstorming-a-launch-plan.md
+├── 2025-03-30-mirrortees-market-and-dropshipping.md
+└── 2026-01-05-focus-on-income-engine.md
+```
 
-Anthropic offers data export through account settings.
+One markdown file per conversation, named by date and title. Each file has a header with title, date, message count, and source, followed by every message with sender and timestamp preserved.
 
-1. In Claude: **Settings → Privacy → Export data**
-2. You'll receive a download link
-3. Drop the markdown or converted files into `sources/claude/`
+Note: ChatGPT stores conversations as a tree (side-branches happen when you edit a message and resubmit). The converter walks the primary branch to produce a linear transcript. Side-branches are skipped in v1; open an issue if you need them.
 
-If Claude exports as JSON, you can adapt the Telegram converter pattern (same shape: sender, timestamp, text) into a small `claude-to-md.py`.
+## Claude (claude.ai chats)
+
+Anthropic offers data export from claude.ai as JSON. Scout ships a converter.
+
+### Export from claude.ai
+
+1. In claude.ai: click your account menu (top-right) → **Settings** → **Privacy** → **Export data**
+2. You'll receive a download link by email
+3. Unzip the download; you're looking for `conversations.json` at the top level
+
+### Convert to markdown
+
+```bash
+python scripts/claude-ai-to-md.py path/to/conversations.json --output-dir $DOSSIER_ROOT/sources/claude/
+```
+
+Output structure:
+
+```
+$DOSSIER_ROOT/sources/claude/
+├── 2026-03-14-planning-the-launch.md
+├── 2026-04-22-project-scoping.md
+└── 2026-05-10-substrate-design.md
+```
+
+One markdown file per conversation, named by date and title.
+
+## Claude Code sessions (local)
+
+Claude Code (the CLI tool) stores every session as a JSONL file on your local machine at:
+
+```
+~/.claude/projects/<encoded-project-path>/<session-uuid>.jsonl
+```
+
+Where the encoded project path is your project's working directory with slashes replaced by dashes. For example, `-Users-yourname-projects-my-app` is the folder for `/Users/yourname/projects/my-app`. Each JSONL file is one session.
+
+### Convert to markdown
+
+```bash
+python scripts/claude-code-to-md.py \
+    ~/.claude/projects/<your-project-folder>/ \
+    --output-dir $DOSSIER_ROOT/sources/claude-code/
+```
+
+Output structure:
+
+```
+$DOSSIER_ROOT/sources/claude-code/<project-slug>/
+├── 2026-04-11-d09ab341.md
+├── 2026-04-20-6211c4cf.md
+└── 2026-06-07-0bf36705.md
+```
+
+One markdown file per session, named by the session's start date and its short UUID. Each file contains all user and assistant messages, with tool calls and tool results preserved as annotated blocks so search still finds them.
+
+By default, Claude's thinking blocks are stripped (they can be very long and noisy). Add `--include-thinking` if you want them in the output:
+
+```bash
+python scripts/claude-code-to-md.py \
+    ~/.claude/projects/<your-project-folder>/ \
+    --output-dir $DOSSIER_ROOT/sources/claude-code/ \
+    --include-thinking
+```
+
+You can run the converter for each Claude Code project separately (one output subfolder per project).
+
+## OpenAI Codex CLI sessions (local)
+
+OpenAI's Codex CLI stores every session as a JSONL rollout file at:
+
+```
+~/.codex/sessions/YYYY/MM/DD/rollout-<timestamp>-<uuid>.jsonl
+```
+
+Thread titles (the human-readable session names shown in the Codex UI) live in `~/.codex/session_index.jsonl` and are merged in automatically when the converter runs, so output files are named by their real title rather than a UUID.
+
+### Convert to markdown
+
+```bash
+# All Codex sessions (recursive from top-level sessions folder):
+python scripts/codex-to-md.py ~/.codex/sessions/ --output-dir $DOSSIER_ROOT/sources/codex/
+
+# Or one month:
+python scripts/codex-to-md.py ~/.codex/sessions/2026/02/ --output-dir $DOSSIER_ROOT/sources/codex/
+
+# Or a single rollout file:
+python scripts/codex-to-md.py \
+    ~/.codex/sessions/2026/02/27/rollout-2026-02-27T11-22-10-<uuid>.jsonl \
+    --output-dir $DOSSIER_ROOT/sources/codex/
+```
+
+Output structure:
+
+```
+$DOSSIER_ROOT/sources/codex/
+├── 2026-02-27-create-qwestor-hr-molt-prototype.md
+├── 2026-03-09-mirrortees-launch-strategy.md
+└── 2026-04-15-continuing-ingestion-pipeline.md
+```
+
+One markdown file per session, named by date and thread title. Each file has a header with title, date, message count, session ID, and the working directory the session ran in. Messages include user/assistant text plus tool calls and tool results (both `function_call` and `custom_tool_call` variants) preserved as annotated blocks so search still finds them.
+
+By default, reasoning/thinking blocks and system/developer messages are stripped. Use `--include-thinking` and/or `--include-system` to keep them.
+
+## Anthropic Cowork / Claude Team
+
+Cowork and Claude for Work / Claude Team export formats are not yet supported in this converter. If you have access to a Cowork/Team workspace and can share an example export (or the format schema), [open an issue](https://github.com/diannekrouse/Scout/issues) and we'll add a converter. In the meantime, individual conversations from a team claude.ai account work with the `claude-ai-to-md.py` converter above.
 
 ## PDFs
 

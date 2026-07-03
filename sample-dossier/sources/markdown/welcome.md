@@ -68,12 +68,20 @@ mandatory 24-hour security lock before export is available.
 
 ### Other sources
 
-- **ChatGPT**: export via ChatGPT's Data Export, drop the markdown files
-  into `$DOSSIER_ROOT/sources/chatgpt/`
-- **Claude**: export via Anthropic's data export, drop into
-  `$DOSSIER_ROOT/sources/claude/`
+- **ChatGPT**: export via ChatGPT's Data Export, then run
+  `python scripts/chatgpt-to-md.py conversations.json --output-dir $DOSSIER_ROOT/sources/chatgpt/`
+- **Claude (claude.ai)**: export via Anthropic's data export, then run
+  `python scripts/claude-ai-to-md.py conversations.json --output-dir $DOSSIER_ROOT/sources/claude/`
+- **Claude Code sessions (local)**: run
+  `python scripts/claude-code-to-md.py ~/.claude/projects/<your-project-folder>/ --output-dir $DOSSIER_ROOT/sources/claude-code/`
+- **OpenAI Codex CLI sessions (local)**: run
+  `python scripts/codex-to-md.py ~/.codex/sessions/ --output-dir $DOSSIER_ROOT/sources/codex/`
 - **PDFs**: use any PDF-to-markdown tool (`pdftotext`, `marker`,
   `docling`), drop into `$DOSSIER_ROOT/sources/pdfs/`
+
+Anthropic Cowork / Claude Team export is not yet supported; individual
+conversations from team accounts work with the `claude-ai-to-md.py`
+converter above.
 
 After adding new files, always re-run
 `python scripts/build-index.py --dossier-root $DOSSIER_ROOT` to update

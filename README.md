@@ -103,8 +103,11 @@ Scout is source-agnostic. Any text-based source can feed the substrate: chat exp
 | Source | Converter | Drop into |
 |---|---|---|
 | **Telegram** | `scripts/telegram-to-md.py` (JSON export → markdown by channel and month) | `$DOSSIER_ROOT/sources/telegram/` |
-| **ChatGPT** | Export via ChatGPT's Data Export; markdown files ship in the export | `$DOSSIER_ROOT/sources/chatgpt/` |
-| **Claude** | Export via Anthropic's data export | `$DOSSIER_ROOT/sources/claude/` |
+| **ChatGPT** | `scripts/chatgpt-to-md.py` (`conversations.json` → markdown per conversation) | `$DOSSIER_ROOT/sources/chatgpt/` |
+| **Claude (claude.ai)** | `scripts/claude-ai-to-md.py` (`conversations.json` → markdown per conversation) | `$DOSSIER_ROOT/sources/claude/` |
+| **Claude Code (local)** | `scripts/claude-code-to-md.py` (JSONL sessions → markdown per session, tool calls preserved) | `$DOSSIER_ROOT/sources/claude-code/` |
+| **OpenAI Codex CLI (local)** | `scripts/codex-to-md.py` (rollout JSONL → markdown per session, human thread titles from `session_index.jsonl`) | `$DOSSIER_ROOT/sources/codex/` |
+| **Anthropic Cowork / Team** | Not yet supported. [Open an issue](https://github.com/diannekrouse/Scout/issues) with an example export and we'll add a converter. | (pending) |
 | **PDFs** | Any PDF-to-markdown tool (`pdftotext`, `marker`, `docling`) | `$DOSSIER_ROOT/sources/pdfs/` |
 
 After adding new files to `sources/`, always re-run `python scripts/build-index.py --dossier-root $DOSSIER_ROOT` to update the index. Scout re-reads the substrate on every page load, so restarting the dev server is optional but ensures nothing is cached.
