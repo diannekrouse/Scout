@@ -888,18 +888,39 @@ export async function listWorkspaceSummaries(): Promise<WorkspaceSummary[]> {
  */
 export async function readSourceBody(relPath: string): Promise<string | null> {
   const root = getDossierRoot();
-  const fullPath = path.resolve(root, relPath);
-  // Path traversal guard: must stay inside DOSSIER_ROOT.
-  if (!fullPath.startsWith(root + path.sep) && fullPath !== root) {
-    console.warn(`[dossier] Refused source read outside root: ${relPath}`);
-    return null;
+
+  // Build the candidate paths to try. We start with the path as given, then
+  // fall back to prepending `sources/` for indices produced by older
+  // build-index versions that stored paths relative to sources/ rather than
+  // to the dossier root.
+  const candidates: string[] = [relPath];
+  if (!relPath.startsWith("sources/") && !relPath.startsWith("sources\\")) {
+    candidates.push(`sources/${relPath}`);
   }
-  try {
-    return await fs.readFile(fullPath, "utf-8");
-  } catch (err) {
-    console.warn(`[dossier] Could not read source ${relPath}:`, err);
-    return null;
+
+  let lastError: unknown = null;
+  for (const candidate of candidates) {
+    const fullPath = path.resolve(root, candidate);
+    // Path traversal guard: must stay inside DOSSIER_ROOT.
+    if (!fullPath.startsWith(root + path.sep) && fullPath !== root) {
+      console.warn(`[dossier] Refused source read outside root: ${candidate}`);
+      continue;
+    }
+    try {
+      const body = await fs.readFile(fullPath, "utf-8");
+      if (candidate !== relPath) {
+        console.warn(
+          `[dossier] Source read succeeded with 'sources/' fallback for legacy path: ${relPath}`,
+        );
+      }
+      return body;
+    } catch (err) {
+      lastError = err;
+    }
   }
+
+  console.warn(`[dossier] Could not read source ${relPath}:`, lastError);
+  return null;
 }
 
 // -- Convenience: dossier root for display -----------------------------------

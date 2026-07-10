@@ -73,7 +73,23 @@ export const SourceFileSchema = z
     tags: StringOrStringArray,
     status: NullableString,
   })
-  .passthrough();
+  .passthrough()
+  .transform((data) => {
+    // Backwards compatibility: accept `workspace` as a fallback for
+    // `workspace_primary`, and `title` as a fallback for `title_detected`.
+    // Older build-index versions wrote these legacy field names.
+    const legacy = data as unknown as {
+      workspace?: string | null;
+      title?: string | null;
+    };
+    if (!data.workspace_primary && legacy.workspace) {
+      data.workspace_primary = legacy.workspace;
+    }
+    if (!data.title_detected && legacy.title) {
+      data.title_detected = legacy.title;
+    }
+    return data;
+  });
 
 export type SourceFile = z.infer<typeof SourceFileSchema>;
 

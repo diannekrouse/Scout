@@ -83,17 +83,23 @@ Each markdown file contains one month of messages from one chat, with sender, ti
 After dropping markdown into `sources/`, run the index builder so Scout knows the files exist:
 
 ```bash
-python scripts/build-index.py --dossier-root $DOSSIER_ROOT
+python3 scripts/build-index.py --dossier-root $DOSSIER_ROOT
 ```
 
 This scans `sources/*/` and generates or updates:
 
 - `index/workspaces.json` (one workspace per top-level `sources/` subfolder)
-- `index/master-index.json` (one entry per markdown file)
+- `index/master-index.json` (one entry per markdown file, with the fields the Scout reader expects: `path`, `workspace_primary`, `title_detected`, `platform`, `filename`, `file_type`, `date_detected`, `total_lines`, `total_words`, `status`)
 
-The script is safe to re-run: existing entries are preserved, new files are added. Run it any time you drop new sources into the folder.
+The script is safe to re-run: existing entries with matching `file_id` are updated in place, new files are added. At the end it prints `N of N source files verified readable` as a self-check that the builder and reader agree on their paths.
 
 Restart Scout (Ctrl+C then `npm run dev`) or just reload the browser to see the new workspace appear.
+
+### Upgrading indices built by an older build-index
+
+Earlier versions of `build-index.py` wrote `workspace` instead of `workspace_primary`, `title` instead of `title_detected`, and `path` values without the `sources/` prefix. If you built an index against Scout before this fix, just re-run `build-index.py` on your dossier — it detects legacy entries and rewrites them in place. You'll see a line like `1 migrated from older format` in the output. No need to delete anything.
+
+If for any reason the migration produces unexpected results, you can start fresh: delete `index/master-index.json` and `index/workspaces.json`, then re-run `build-index.py`.
 
 ### Ongoing ingest (optional)
 
