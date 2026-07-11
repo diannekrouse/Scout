@@ -7,30 +7,70 @@ one file per conversation. ChatGPT stores each conversation as a tree of
 messages (parent/children pointers); this script walks the primary branch
 to produce a linear transcript.
 
+Modes
+-----
+Direct import (default):
+    python3 chatgpt-to-md.py conversations.json --output-dir $DOSSIER_ROOT/sources/chatgpt/
+
+Update-aware: the converter keeps a small state file at
+    <output-dir>/.import-state.json
+tracking each conversation's last known message count and update timestamp.
+On re-run, conversations that haven't changed are SKIPPED (fast, no writes),
+conversations with new messages are UPDATED (regenerated in place), and new
+conversations are added. Nothing is deleted.
+
+Hard-exclude filters (fail-safes for private content):
+    --exclude-title-contains "Sarah,Mom,therapy"
+        Skip conversations whose title contains any of these terms
+        (case-insensitive, comma-separated).
+    --exclude-keyword-any "prescription,medical,SSN"
+        Skip conversations whose message body contains any of these terms
+        (case-insensitive, comma-separated).
+
+Report CSV (matches the chatgpt-export-review spreadsheet structure):
+    --keywords "qi7,voyager,lucen,mirrortees,agaboo"
+        Count case-insensitive occurrences of each keyword per conversation.
+    --report import-report.csv
+        Write a CSV with title, match_status (NEW/UPDATED/SAME/EXCLUDED),
+        existing filename, dates, word/message counts, total keyword hits,
+        primary topics summary, and one hits:<keyword> column per keyword.
+
 Get the export from ChatGPT:
     Settings > Data controls > Export data
-    You will receive a download link by email. Unzip and locate
-    conversations.json (usually at the top level of the export).
+    (You'll receive a download link via email; unzip and find
+    conversations.json at the top level.)
 
-Usage:
-    python chatgpt-to-md.py path/to/conversations.json --output-dir sources/chatgpt/
-
-Example:
-    python chatgpt-to-md.py \\
+Example
+-------
+    python3 chatgpt-to-md.py \\
         ~/Downloads/chatgpt-export/conversations.json \\
-        --output-dir $DOSSIER_ROOT/sources/chatgpt/
+        --output-dir $DOSSIER_ROOT/sources/chatgpt/ \\
+        --keywords "qi7,voyager,lucen,mirrortees,agaboo" \\
+        --exclude-title-contains "Sarah,therapy" \\
+        --report ~/Desktop/chatgpt-import-report.csv
 
 Output structure:
-    sources/chatgpt/YYYY-MM-DD-<title-slug>.md
+    sources/chatgpt/
+    ├── .import-state.json
+    ├── 2024-11-15-brainstorming-a-launch-plan.md
+    ├── 2025-03-30-mirrortees-market-and-dropshipping.md
+    └── 2026-01-05-focus-on-income-engine.md
 
 No external dependencies (Python standard library only).
 """
 
 import argparse
+import csv
 import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
+
+
+STATE_FILENAME = ".import-state.json"
+
+
+# ------------------------- Utilities ----------------------------------------
 
 
 def safe_slug(name):
@@ -51,16 +91,24 @@ def format_timestamp(unix_ts):
         return "unknown-time"
 
 
-def walk_conversation(mapping):
-    """Walk the ChatGPT message tree along the primary branch to produce a linear list.
+def date_from_timestamp(unix_ts):
+    if not unix_ts:
+        return "unknown-date"
+    try:
+        dt = datetime.fromtimestamp(float(unix_ts), tz=timezone.utc)
+        return dt.strftime("%Y-%m-%d")
+    except (ValueError, TypeError, OSError):
+        return "unknown-date"
 
-    ChatGPT stores conversations as a tree via parent/children pointers. This
-    follows the first child at each step, which is the primary conversation branch
-    (side-branches from message edits are skipped)."""
+
+# ------------------------- ChatGPT tree walking -----------------------------
+
+
+def walk_conversation(mapping):
+    """Walk the ChatGPT message tree along the primary branch."""
     if not mapping:
         return []
 
-    # Find the root: the node with parent = None
     root_id = None
     for node_id, node in mapping.items():
         if node.get("parent") is None:
@@ -68,7 +116,6 @@ def walk_conversation(mapping):
             break
 
     if not root_id:
-        # Fallback: any node without a valid parent, in insertion order
         return [node for node in mapping.values() if node.get("message")]
 
     result = []
@@ -113,10 +160,7 @@ def extract_text(message):
                     text_parts.append(f"[Audio: {p.get('text', '')}]")
         return "\n\n".join(text for text in text_parts if text)
 
-    if content_type == "code":
-        return f"```\n{content.get('text', '')}\n```"
-
-    if content_type == "execution_output":
+    if content_type in ("code", "execution_output"):
         return f"```\n{content.get('text', '')}\n```"
 
     if content_type == "tether_quote":
@@ -133,7 +177,6 @@ def format_node(node):
     author = msg.get("author", {}) or {}
     role = author.get("role", "unknown")
 
-    # System messages with empty content are noise; skip them
     text = extract_text(msg)
     if not text.strip():
         return None
@@ -153,7 +196,128 @@ def format_node(node):
     return f"### {timestamp} - {sender}\n\n{text}\n"
 
 
-def convert(json_path, output_dir):
+def get_full_text(mapping):
+    """Return all message texts concatenated (for keyword scanning)."""
+    nodes = walk_conversation(mapping)
+    parts = []
+    for node in nodes:
+        msg = node.get("message")
+        if not msg:
+            continue
+        text = extract_text(msg)
+        if text:
+            parts.append(text)
+    return "\n".join(parts)
+
+
+# ------------------------- Filtering & counting -----------------------------
+
+
+def check_exclusions(conv, exclude_title_terms, exclude_keyword_terms, cached_full_text=None):
+    """Return (excluded: bool, reason: str)."""
+    title_lower = (conv.get("title") or "").lower()
+
+    for term in exclude_title_terms:
+        term_lower = term.lower().strip()
+        if term_lower and term_lower in title_lower:
+            return True, f"title contains '{term.strip()}'"
+
+    if exclude_keyword_terms:
+        if cached_full_text is None:
+            cached_full_text = get_full_text(conv.get("mapping", {}))
+        text_lower = cached_full_text.lower()
+        for term in exclude_keyword_terms:
+            term_lower = term.lower().strip()
+            if term_lower and term_lower in text_lower:
+                return True, f"body contains '{term.strip()}'"
+
+    return False, ""
+
+
+def count_keywords(full_text, keywords):
+    """Return dict of {keyword: case-insensitive count in full_text}."""
+    if not keywords:
+        return {}
+    text_lower = full_text.lower()
+    return {kw: text_lower.count(kw.lower().strip()) for kw in keywords if kw.strip()}
+
+
+# ------------------------- State file ---------------------------------------
+
+
+def load_state(output_dir):
+    state_path = output_dir / STATE_FILENAME
+    if not state_path.exists():
+        return {"version": 1, "conversations": {}}
+    try:
+        with open(state_path, encoding="utf-8") as f:
+            state = json.load(f)
+        state.setdefault("version", 1)
+        state.setdefault("conversations", {})
+        return state
+    except (json.JSONDecodeError, OSError):
+        return {"version": 1, "conversations": {}}
+
+
+def save_state(state, output_dir):
+    state_path = output_dir / STATE_FILENAME
+    state["last_import"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    with open(state_path, "w", encoding="utf-8") as f:
+        json.dump(state, f, indent=2)
+
+
+def compare_to_state(conv_id, message_count, update_time, state):
+    """Return ('NEW' | 'UPDATED' | 'SAME', existing_filename_or_None)."""
+    prev = state["conversations"].get(conv_id)
+    if not prev:
+        return "NEW", None
+    if (
+        prev.get("message_count") == message_count
+        and prev.get("update_time") == update_time
+    ):
+        return "SAME", prev.get("filename")
+    return "UPDATED", prev.get("filename")
+
+
+# ------------------------- Report CSV ---------------------------------------
+
+
+def write_report(report_rows, keywords, report_path):
+    """Write import report CSV matching the chatgpt-export-review structure."""
+    report_path = Path(report_path).expanduser().resolve()
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+
+    core_columns = [
+        "title",
+        "match_status",
+        "existing_filename",
+        "date_created",
+        "date_updated",
+        "word_count",
+        "messages",
+        "total_core_hits",
+        "primary_topics",
+        "excluded_reason",
+    ]
+    keyword_columns = [f"hits:{kw.strip()}" for kw in keywords if kw.strip()]
+    all_columns = core_columns + keyword_columns
+
+    with open(report_path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=all_columns, extrasaction="ignore")
+        writer.writeheader()
+        for row in report_rows:
+            writer.writerow(row)
+
+
+# ------------------------- Main conversion ----------------------------------
+
+
+def convert(json_path, output_dir, keywords=None, exclude_title=None,
+            exclude_keyword=None, report_path=None):
+    keywords = keywords or []
+    exclude_title = exclude_title or []
+    exclude_keyword = exclude_keyword or []
+
     json_path = Path(json_path).expanduser().resolve()
     output_dir = Path(output_dir).expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -161,31 +325,78 @@ def convert(json_path, output_dir):
     with open(json_path, encoding="utf-8") as f:
         data = json.load(f)
 
-    # ChatGPT export is a top-level list of conversations
     if not isinstance(data, list):
         print(f"[error] Expected a list of conversations at {json_path}")
         return 1
 
-    written = 0
-    skipped = 0
+    state = load_state(output_dir)
+
+    written_new = 0
+    written_updated = 0
+    unchanged = 0
+    excluded = 0
+    empty = 0
+
+    report_rows = []
+
     for conv in data:
+        conv_id = conv.get("id") or conv.get("conversation_id") or ""
         title = conv.get("title") or "untitled"
         create_time = conv.get("create_time", 0)
-        create_date = "unknown-date"
-        if create_time:
-            try:
-                dt = datetime.fromtimestamp(float(create_time), tz=timezone.utc)
-                create_date = dt.strftime("%Y-%m-%d")
-            except (ValueError, TypeError, OSError):
-                pass
+        update_time = conv.get("update_time", 0)
+        create_date = date_from_timestamp(create_time)
+        update_date = date_from_timestamp(update_time)
 
         mapping = conv.get("mapping", {})
+        full_text = get_full_text(mapping)
         nodes = walk_conversation(mapping)
         formatted = [format_node(n) for n in nodes]
         formatted = [f for f in formatted if f]
+        message_count = len(formatted)
+        word_count = len(full_text.split())
 
-        if not formatted:
-            skipped += 1
+        keyword_hits = count_keywords(full_text, keywords)
+        total_core_hits = sum(keyword_hits.values())
+        primary_topics = "; ".join(
+            kw for kw, count in sorted(keyword_hits.items(), key=lambda x: -x[1])[:5]
+            if count > 0
+        )
+
+        is_excluded, exclude_reason = check_exclusions(
+            conv, exclude_title, exclude_keyword, cached_full_text=full_text
+        )
+
+        if is_excluded:
+            match_status = "EXCLUDED"
+            existing_filename = (state["conversations"].get(conv_id, {}) or {}).get("filename", "")
+            excluded += 1
+        elif not formatted:
+            empty += 1
+            continue
+        else:
+            match_status, existing_filename = compare_to_state(
+                conv_id, message_count, update_time, state
+            )
+
+        row = {
+            "title": title,
+            "match_status": match_status,
+            "existing_filename": existing_filename or "",
+            "date_created": create_date,
+            "date_updated": update_date,
+            "word_count": word_count,
+            "messages": message_count,
+            "total_core_hits": total_core_hits,
+            "primary_topics": primary_topics,
+            "excluded_reason": exclude_reason,
+        }
+        for kw in keywords:
+            row[f"hits:{kw.strip()}"] = keyword_hits.get(kw, 0)
+        report_rows.append(row)
+
+        if match_status in ("EXCLUDED", "SAME"):
+            if match_status == "SAME":
+                unchanged += 1
             continue
 
         filename = f"{create_date}-{safe_slug(title)}.md"
@@ -194,17 +405,45 @@ def convert(json_path, output_dir):
         header = (
             f"# {title}\n\n"
             f"**Date:** {create_date}\n"
-            f"**Messages:** {len(formatted)}\n"
+            f"**Messages:** {message_count}\n"
             f"**Source:** ChatGPT data export\n\n"
             f"---\n\n"
         )
         content = header + "\n---\n\n".join(formatted)
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(content)
-        written += 1
+
+        state["conversations"][conv_id] = {
+            "filename": filename,
+            "message_count": message_count,
+            "update_time": update_time,
+            "title": title,
+        }
+
+        if match_status == "NEW":
+            written_new += 1
+        elif match_status == "UPDATED":
+            written_updated += 1
+
+    save_state(state, output_dir)
+
+    if report_path:
+        write_report(report_rows, keywords, report_path)
 
     print(f"[wrote] {output_dir}")
-    print(f"        {written} conversation(s), {skipped} empty/skipped")
+    summary_parts = [
+        f"{written_new} new",
+        f"{written_updated} updated",
+        f"{unchanged} unchanged",
+        f"{excluded} excluded",
+    ]
+    if empty:
+        summary_parts.append(f"{empty} empty/skipped")
+    print(f"        {', '.join(summary_parts)}")
+    print(f"        {len(state['conversations'])} conversations tracked in {STATE_FILENAME}")
+    if report_path:
+        print(f"[report] {Path(report_path).expanduser().resolve()}")
+
     return 0
 
 
@@ -218,8 +457,36 @@ def main():
         default="sources/chatgpt/",
         help="Output directory (default: sources/chatgpt/)",
     )
+    parser.add_argument(
+        "--keywords",
+        help="Comma-separated keywords to count per conversation (for the report CSV)",
+    )
+    parser.add_argument(
+        "--exclude-title-contains",
+        help="Skip conversations whose title contains any of these terms (comma-separated, case-insensitive)",
+    )
+    parser.add_argument(
+        "--exclude-keyword-any",
+        help="Skip conversations whose message body contains any of these terms (comma-separated, case-insensitive)",
+    )
+    parser.add_argument(
+        "--report",
+        help="Write a report CSV to this path (match_status, hits per keyword, primary topics, etc.)",
+    )
     args = parser.parse_args()
-    return convert(args.json_path, args.output_dir) or 0
+
+    keywords = [k.strip() for k in (args.keywords or "").split(",") if k.strip()]
+    exclude_title = [t.strip() for t in (args.exclude_title_contains or "").split(",") if t.strip()]
+    exclude_keyword = [k.strip() for k in (args.exclude_keyword_any or "").split(",") if k.strip()]
+
+    return convert(
+        args.json_path,
+        args.output_dir,
+        keywords=keywords,
+        exclude_title=exclude_title,
+        exclude_keyword=exclude_keyword,
+        report_path=args.report,
+    ) or 0
 
 
 if __name__ == "__main__":

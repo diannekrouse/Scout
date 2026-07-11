@@ -2,6 +2,25 @@
 
 Scout reads any text-based source with line-level provenance. This guide covers the common ones and shows the pattern for adding new sources.
 
+## Before your first command
+
+If you have never used the terminal before, here is what you need to know:
+
+**Opening Terminal on macOS:** Press `Cmd+Space`, type "Terminal", press Enter. Or Applications → Utilities → Terminal.
+
+**Setting DOSSIER_ROOT** (the folder where all your ingested data lives). At the start of every terminal session:
+
+```bash
+export DOSSIER_ROOT=/Users/yourname/path/to/your/dossier
+mkdir -p "$DOSSIER_ROOT/sources"
+```
+
+Replace `/Users/yourname/path/to/your/dossier` with your actual dossier folder. Then `$DOSSIER_ROOT` in any subsequent command expands to that path. Note: if you close the terminal window and open a new one, you need to run `export DOSSIER_ROOT=...` again. It does not persist by default.
+
+**Pasting long file paths:** if you don't want to type a long path, drag the file from Finder into the terminal. macOS auto-pastes the full path.
+
+**Multi-line commands:** commands in this guide sometimes have a `\` at the end of a line, meaning "the command continues on the next line." You can also paste them as one line if you prefer.
+
 ## The core idea
 
 Scout is read-only by design. Ingestion is a separate concern: converters turn source formats (JSON exports, PDFs, transcripts) into markdown files under `$DOSSIER_ROOT/sources/`. Scout reads what's on disk. Add a source, restart the reader, it appears.
@@ -41,30 +60,30 @@ Finding Telegram Lite is intentionally tricky (Apple's App Store search often hi
 
 The standard Telegram Desktop app supports export directly. No Lite version required.
 
-### Export a chat
+### Export chats (recommended: bulk export via Advanced settings)
 
-Two paths depending on scope:
-
-**Single chat (recommended for most Scout ingestion):**
-
-1. Open the specific conversation you want to export
-2. Click the three vertical dots (⋮) in the top-right corner of the chat window
-3. Select **Export chat history**
-4. In the setup window:
-   - **Format: JSON** (recommended for Scout; HTML works too but requires an extra parse step)
-   - Uncheck **Videos, Voice Messages, Round Video Messages** if you only want text and light media (recommended; keeps file sizes reasonable and Scout is text-first anyway)
-   - Choose a save location
-5. Click **Export**
-6. When it completes, click **Show My Data** to reveal the export folder in Finder
-
-**All chats at once:**
+The per-chat "three vertical dots → Export chat history" menu does not reliably surface the JSON format toggle on all Telegram Lite versions. Use the bulk **Settings → Advanced → Export Telegram Data** flow instead. It is more reliable and lets you pick exactly which chat categories to include.
 
 1. **Settings → Advanced → Export Telegram Data**
-2. Select which categories to include (Personal chats, Bot chats, Public groups, etc.)
-3. Format: **JSON**
-4. Click **Export**
+2. Uncheck the top four sections (Account information, Contacts list, Story archive, Music on Profile) — Scout has no use for them
+3. Under **Chat export settings**, check only the categories you want. For a Ben-style test:
+   - Check **Bot chats** (this is the OpenClaw/OmegaClaw territory)
+   - Uncheck Personal chats, Private groups, Private channels, Public groups, Public channels
+4. Under **Media export settings**, uncheck everything if you only want text (recommended; Scout is text-first). Otherwise the size limit slider at 8 MB is fine.
+5. Under **Other**, uncheck both (Active sessions, Miscellaneous data)
+6. Under **Location and format**, choose **Machine-readable JSON**
+7. Click **Export**
 
-Telegram writes either `result.json` (bulk export) or a `.json` file named after the chat (single export) to the save location.
+Telegram writes a `DataExport_YYYY-MM-DD/result.json` file to your chosen location (usually `~/Downloads/Telegram Lite/` on macOS).
+
+**Per-chat fallback (if the bulk export flow is unavailable in your version):**
+
+1. Open the specific conversation you want to export
+2. Click the three vertical dots (⋮) in the top-right corner
+3. Select **Export chat history**
+4. In the setup window: **Format: JSON**, uncheck media unless needed, choose save location, click **Export**
+
+If the JSON option is missing from the per-chat dialog, switch to the bulk flow above.
 
 ### Convert to markdown
 
@@ -116,24 +135,46 @@ For continuous ingest instead of periodic manual exports, run a Telegram ingeste
 
 ## ChatGPT
 
-ChatGPT offers built-in data export as JSON. Scout ships a converter.
+ChatGPT offers built-in data export as JSON. Scout ships a converter with update-aware imports and optional hard-exclude filters.
 
 ### Export from ChatGPT
 
 1. In ChatGPT: **Settings → Data controls → Export data**
-2. You'll receive an email with a download link (usually within 24 hours)
-3. Unzip the download; you're looking for `conversations.json` at the top level
+2. Confirm your email; ChatGPT emails you a download link within a few hours (sometimes up to 24)
+3. Download and unzip; you're looking for `conversations.json` at the top level (usually in `~/Downloads/chatgpt-export/`)
 
 ### Convert to markdown
 
+Basic use (imports every conversation):
+
 ```bash
-python3 scripts/chatgpt-to-md.py path/to/conversations.json --output-dir $DOSSIER_ROOT/sources/chatgpt/
+python3 scripts/chatgpt-to-md.py ~/Downloads/chatgpt-export/conversations.json --output-dir "$DOSSIER_ROOT/sources/chatgpt/"
 ```
+
+With optional flags for keyword counting, hard-exclude, and report CSV:
+
+```bash
+python3 scripts/chatgpt-to-md.py \
+    ~/Downloads/chatgpt-export/conversations.json \
+    --output-dir "$DOSSIER_ROOT/sources/chatgpt/" \
+    --keywords "qi7,voyager,lucen,mirrortees,agaboo" \
+    --exclude-title-contains "therapy,personal" \
+    --exclude-keyword-any "prescription,medical" \
+    --report ~/Desktop/chatgpt-import-report.csv
+```
+
+Flags:
+
+- **`--keywords "..."`** — comma-separated keywords to count per conversation. Each keyword becomes a `hits:<keyword>` column in the report CSV. Used for tracking which chats mention your topics of interest.
+- **`--exclude-title-contains "..."`** — comma-separated terms. Any conversation whose title contains any of these (case-insensitive) is skipped entirely. Good fail-safe for personal content.
+- **`--exclude-keyword-any "..."`** — comma-separated terms. Any conversation whose message body contains any of these (case-insensitive) is skipped entirely. Stronger privacy fail-safe.
+- **`--report FILE.csv`** — write a report CSV with match_status, hits per keyword, primary topics, dates, word/message counts. Opens in Numbers or Excel.
 
 Output structure:
 
 ```
 $DOSSIER_ROOT/sources/chatgpt/
+├── .import-state.json   (tracks what was imported; do not edit)
 ├── 2024-11-15-brainstorming-a-launch-plan.md
 ├── 2025-03-30-mirrortees-market-and-dropshipping.md
 └── 2026-01-05-focus-on-income-engine.md
@@ -141,34 +182,61 @@ $DOSSIER_ROOT/sources/chatgpt/
 
 One markdown file per conversation, named by date and title. Each file has a header with title, date, message count, and source, followed by every message with sender and timestamp preserved.
 
+### Update-aware re-imports
+
+The converter maintains a small state file at `<output-dir>/.import-state.json` tracking each conversation's last known message count and update timestamp. On subsequent runs (say, months later with a fresh export):
+
+- Unchanged conversations are **SKIPPED** (fast, no writes)
+- Conversations with new messages are **UPDATED** in place (same filename, new content)
+- New conversations are added as **NEW**
+- Excluded conversations are marked in the report but never written to disk
+
+Summary printed at the end: `X new, Y updated, Z unchanged, N excluded`.
+
 Note: ChatGPT stores conversations as a tree (side-branches happen when you edit a message and resubmit). The converter walks the primary branch to produce a linear transcript. Side-branches are skipped in v1; open an issue if you need them.
 
 ## Claude (claude.ai chats)
 
-Anthropic offers data export from claude.ai as JSON. Scout ships a converter.
+Anthropic offers data export from claude.ai as JSON. Scout ships a converter with the same update-aware imports, hard-exclude filters, and report CSV as ChatGPT.
 
 ### Export from claude.ai
 
-1. In claude.ai: click your account menu (top-right) → **Settings** → **Privacy** → **Export data**
-2. You'll receive a download link by email
-3. Unzip the download; you're looking for `conversations.json` at the top level
+1. Go to **claude.ai** in a browser and log in
+2. Click your name/profile (bottom-left corner in most versions)
+3. **Settings → Privacy → Export data**
+4. Confirm your email; Anthropic emails you a download link (a few hours; sometimes up to 24)
+5. Download and unzip (usually to `~/Downloads/data-YYYY-MM-DD/`); you're looking for `conversations.json` at the top level
 
 ### Convert to markdown
 
+Basic use:
+
 ```bash
-python3 scripts/claude-ai-to-md.py path/to/conversations.json --output-dir $DOSSIER_ROOT/sources/claude/
+python3 scripts/claude-ai-to-md.py ~/Downloads/data-2026-07-11/conversations.json --output-dir "$DOSSIER_ROOT/sources/claude/"
+```
+
+Same flags as ChatGPT (`--keywords`, `--exclude-title-contains`, `--exclude-keyword-any`, `--report`):
+
+```bash
+python3 scripts/claude-ai-to-md.py \
+    ~/Downloads/data-2026-07-11/conversations.json \
+    --output-dir "$DOSSIER_ROOT/sources/claude/" \
+    --keywords "qi7,voyager,lucen,mirrortees" \
+    --exclude-title-contains "therapy,personal" \
+    --report ~/Desktop/claude-import-report.csv
 ```
 
 Output structure:
 
 ```
 $DOSSIER_ROOT/sources/claude/
+├── .import-state.json
 ├── 2026-03-14-planning-the-launch.md
 ├── 2026-04-22-project-scoping.md
 └── 2026-05-10-substrate-design.md
 ```
 
-One markdown file per conversation, named by date and title.
+Update-aware re-imports work exactly like ChatGPT: unchanged conversations skipped, changed conversations regenerated, new conversations added. Same `X new, Y updated, Z unchanged, N excluded` summary.
 
 ## Claude Code sessions (local)
 
