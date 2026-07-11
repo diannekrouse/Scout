@@ -6,6 +6,15 @@ Scout reads any text-based source with line-level provenance. This guide covers 
 
 Scout is read-only by design. Ingestion is a separate concern: converters turn source formats (JSON exports, PDFs, transcripts) into markdown files under `$DOSSIER_ROOT/sources/`. Scout reads what's on disk. Add a source, restart the reader, it appears.
 
+Before running any of the commands in this guide, set `DOSSIER_ROOT` as a shell variable in your terminal. Scout's `.env` file configures Scout itself; it does not export variables to your shell:
+
+```bash
+export DOSSIER_ROOT=/absolute/path/to/your/data
+mkdir -p "$DOSSIER_ROOT/sources"
+```
+
+All example commands assume `python3` (macOS 12.3+ and modern Linux ship no plain `python` binary; the converter scripts use `#!/usr/bin/env python3`).
+
 Because ingestion is separate, adding a new source type is always the same shape:
 
 1. Write a converter (script, tool, or manual) that outputs markdown into `sources/<source-name>/`
@@ -60,7 +69,7 @@ Telegram writes either `result.json` (bulk export) or a `.json` file named after
 ### Convert to markdown
 
 ```bash
-python scripts/telegram-to-md.py /path/to/result.json --output-dir $DOSSIER_ROOT/sources/telegram/
+python3 scripts/telegram-to-md.py /path/to/result.json --output-dir $DOSSIER_ROOT/sources/telegram/
 ```
 
 Output structure:
@@ -118,7 +127,7 @@ ChatGPT offers built-in data export as JSON. Scout ships a converter.
 ### Convert to markdown
 
 ```bash
-python scripts/chatgpt-to-md.py path/to/conversations.json --output-dir $DOSSIER_ROOT/sources/chatgpt/
+python3 scripts/chatgpt-to-md.py path/to/conversations.json --output-dir $DOSSIER_ROOT/sources/chatgpt/
 ```
 
 Output structure:
@@ -147,7 +156,7 @@ Anthropic offers data export from claude.ai as JSON. Scout ships a converter.
 ### Convert to markdown
 
 ```bash
-python scripts/claude-ai-to-md.py path/to/conversations.json --output-dir $DOSSIER_ROOT/sources/claude/
+python3 scripts/claude-ai-to-md.py path/to/conversations.json --output-dir $DOSSIER_ROOT/sources/claude/
 ```
 
 Output structure:
@@ -174,7 +183,7 @@ Where the encoded project path is your project's working directory with slashes 
 ### Convert to markdown
 
 ```bash
-python scripts/claude-code-to-md.py \
+python3 scripts/claude-code-to-md.py \
     ~/.claude/projects/<your-project-folder>/ \
     --output-dir $DOSSIER_ROOT/sources/claude-code/
 ```
@@ -193,7 +202,7 @@ One markdown file per session, named by the session's start date and its short U
 By default, Claude's thinking blocks are stripped (they can be very long and noisy). Add `--include-thinking` if you want them in the output:
 
 ```bash
-python scripts/claude-code-to-md.py \
+python3 scripts/claude-code-to-md.py \
     ~/.claude/projects/<your-project-folder>/ \
     --output-dir $DOSSIER_ROOT/sources/claude-code/ \
     --include-thinking
@@ -215,13 +224,13 @@ Thread titles (the human-readable session names shown in the Codex UI) live in `
 
 ```bash
 # All Codex sessions (recursive from top-level sessions folder):
-python scripts/codex-to-md.py ~/.codex/sessions/ --output-dir $DOSSIER_ROOT/sources/codex/
+python3 scripts/codex-to-md.py ~/.codex/sessions/ --output-dir $DOSSIER_ROOT/sources/codex/
 
 # Or one month:
-python scripts/codex-to-md.py ~/.codex/sessions/2026/02/ --output-dir $DOSSIER_ROOT/sources/codex/
+python3 scripts/codex-to-md.py ~/.codex/sessions/2026/02/ --output-dir $DOSSIER_ROOT/sources/codex/
 
 # Or a single rollout file:
-python scripts/codex-to-md.py \
+python3 scripts/codex-to-md.py \
     ~/.codex/sessions/2026/02/27/rollout-2026-02-27T11-22-10-<uuid>.jsonl \
     --output-dir $DOSSIER_ROOT/sources/codex/
 ```

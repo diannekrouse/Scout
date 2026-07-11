@@ -174,10 +174,22 @@ export default async function SearchPage({ searchParams }: PageProps) {
           Type a query above to search across every indexed source.
         </p>
       ) : matches.length === 0 ? (
-        <p className="text-sm text-muted">
-          No matches for{" "}
-          <span className="font-mono text-bright">&ldquo;{query}&rdquo;</span>.
-        </p>
+        <div className="text-sm text-muted space-y-2">
+          <p>
+            No matches for{" "}
+            <span className="font-mono text-bright">&ldquo;{query}&rdquo;</span>{" "}
+            in concept names, segment titles or summaries, source titles,
+            filenames, tags, or personas.
+          </p>
+          <p className="text-xs text-dim">
+            Message-body text is not yet searched. If you are looking for a
+            phrase you know sits inside a chat, open the chat directly from{" "}
+            <Link href="/chats" className="underline hover:text-body">
+              Chats
+            </Link>{" "}
+            for now; full-text search is on the roadmap.
+          </p>
+        </div>
       ) : (
         <div className="space-y-10">
           <div className="text-xs text-dim font-mono">

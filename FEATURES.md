@@ -8,7 +8,11 @@ This document is a complete inventory of what's built into Scout. Use it as a re
 
 ## At a glance
 
-Scout is a memory layer for everything you've ever written. It indexes years of AI conversations (ChatGPT, Claude, Grok), documents, PDFs, and notes into a single searchable, traceable, browsable substrate. Every concept traces back to a segment; every segment traces back to its exact line in the source.
+*Last refreshed: 2026-07-10 (Telegram converter, Claude Code + Codex converters, and build-index self-check landed on this pass; earlier sections may still reflect the May snapshot).*
+
+Scout is a memory layer for everything you've ever written. It indexes years of AI conversations and other text-based sources into a single searchable, traceable, browsable substrate. Every concept traces back to a segment; every segment traces back to its exact line in the source.
+
+Supported sources with shipped converters: **Telegram, ChatGPT, Claude (claude.ai), Claude Code (local JSONL), OpenAI Codex CLI (local JSONL), PDFs** (via any PDF-to-markdown tool). New converters welcome via GitHub Issues.
 
 Two interfaces in one product:
 - **For humans**: a beautifully designed reader with workspaces, segments, concepts, search, archive, and a library-card-to-bundle flow.
@@ -203,11 +207,12 @@ Three conceptual axes (flat in the data, semantic in our heads):
 ### Definition
 Each workspace lives in `index/workspaces.json` with: id, name, color (hex), description, optional `glyph` name.
 
-### Built-in workspaces (handoff)
-- **Qwestor** (`#50C878`, magnifier glyph): SNET Pod 14 research platform
-- **SingularityNET / Hyperon** (`#9B59B6`): Organizational + Hyperon work
-- **Qwello** (`#FF8B6F`): Companion product, preserved for reference
-- **Marginalia** (`#C8B5D9`): Quirky chats kept for posterity
+### Bundled sample workspace
+Scout ships with one workspace in the bundled `sample-dossier/`: **Welcome** (`#E89B5C`, waving-hand glyph). Its content walks new users through what Scout is and how to add their own data.
+
+Workspaces are data-driven from your substrate's `workspaces.json`. The ingest quickstart (see README and `docs/ingest-guide.md`) creates workspaces automatically from the top-level subfolders of `sources/` (e.g. dropping files under `sources/telegram/` produces a `telegram` workspace).
+
+*(Historic note: the original May 2026 SNET handoff dossier defined the workspaces Qwestor, SingularityNET/Hyperon, Qwello, and Marginalia. Those are examples of substrate content, not built-in workspaces of the reader.)*
 
 ### WorkspaceBadge
 Each workspace gets a stable illustrated badge. 10 glyphs available:

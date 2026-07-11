@@ -101,6 +101,20 @@ def format_message(msg):
 
 def convert(json_path, output_dir):
     """Convert a Telegram JSON export to markdown files in output_dir."""
+    # Guard against an unset $DOSSIER_ROOT that expanded to an empty string
+    # in the caller's shell. When that happens, `$DOSSIER_ROOT/sources/telegram/`
+    # becomes literally `/sources/telegram/`, which tries to write at the
+    # filesystem root (fails with ENOENT or "Read-only file system" and looks
+    # like an OS problem rather than an unset-variable problem).
+    output_dir_str = str(output_dir)
+    if output_dir_str.startswith("/sources/") or output_dir_str == "/sources":
+        print(f"[error] --output-dir resolved to '{output_dir_str}', which points at the")
+        print(f"        filesystem root. This usually means $DOSSIER_ROOT is unset in your")
+        print(f"        shell. Set it first, then rerun:")
+        print(f"          export DOSSIER_ROOT=/absolute/path/to/your/data")
+        print(f"          mkdir -p \"$DOSSIER_ROOT/sources\"")
+        return 1
+
     json_path = Path(json_path)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)

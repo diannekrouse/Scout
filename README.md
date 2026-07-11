@@ -1,8 +1,8 @@
 # Scout
 
-A persistent memory and context layer for years of conversations, documents, and notes across any platform. Chat exports (ChatGPT, Claude, Grok, Telegram, Discord, Slack), PDFs, transcripts, research notes, and any other text-based source can feed the substrate. Indexed, searchable, and traceable to the exact line they came from.
+A persistent memory and context layer for years of conversations, documents, and notes across any platform. Chat exports (ChatGPT, Claude, Grok, Telegram, Discord, Slack), PDFs, transcripts, research notes, and any other text-based source can feed Scout's substrate (the plain folder of files it reads). Indexed by chat, source, and workspace; traceable to the exact line every claim came from.
 
-Find anything you've ever written. Drill from a single line back to the moment it was written. Pin what matters to your Library Card, compile a Markdown bundle, and paste it straight into your next conversation with an AI so it has your full context: your sources, your conclusions, where each line came from.
+Find your way back to anything you've ever written. Drill from a single line back to the moment it was written. Pin what matters to your Library Card, compile a Markdown bundle, and paste it straight into your next conversation with an AI so it has your full context: your sources, your conclusions, where each line came from.
 
 Scout is a thin Next.js reader on a folder-based substrate. Workspaces, sources, concepts, and segments live in plain JSON files on disk; Scout reads them. The reader is read-only by design; ingesters and agents are separate concerns.
 
@@ -22,7 +22,9 @@ For the complete feature inventory, see [`FEATURES.md`](FEATURES.md).
 
 ## Run it
 
-**Prerequisites:** [Node.js 18 or later](https://nodejs.org/) and `npm` (which ships with Node).
+**Prerequisites:**
+- [Node.js 18.18 or later](https://nodejs.org/) (20 LTS recommended) and `npm` (which ships with Node)
+- Python 3.8 or later, for the ingest converters (uses only the standard library, no `pip install` needed)
 
 Open a terminal and run:
 
@@ -35,11 +37,11 @@ npm run dev
 
 Open **http://localhost:3000** in your browser.
 
-You'll land on Scout's home page with one workspace called **Welcome**. Click into it, open a segment, watch the source window appear. Pin something to your Library Card. Compile a Markdown bundle. Everything works on first run, no configuration needed.
+You'll arrive on Scout's home page with one workspace called **Welcome**. Click into it, open a segment (a topic-sized slice of one chat), watch the source window appear at the exact lines that segment covers. Pin something to your Library Card. Compile a Markdown bundle. Everything works on first run, no configuration needed.
 
 If port 3000 is already in use, Next.js picks the next available port (usually 3001) and prints the URL in your terminal.
 
-To stop the server, press `Ctrl+C` in the terminal. To run again later, just `npm run dev` from inside the `scout/` folder.
+To stop the server, press `Ctrl+C` in the terminal. To run again later, just `npm run dev` from inside the `Scout/` folder.
 
 ## Point Scout at your own data
 
@@ -53,7 +55,12 @@ Edit `.env`:
 
 ```
 DOSSIER_ROOT=/absolute/path/to/your/data
-ALLOWED_WORKSPACES=research,team-notes
+
+# Optional: filter which workspaces show in the UI. Leave unset (or commented
+# out) to see every workspace in your data. If you do set it, use workspace
+# IDs that exist in YOUR data (the ingest quickstart below creates telegram,
+# chatgpt, claude, claude-code, codex, etc.).
+# ALLOWED_WORKSPACES=telegram,chatgpt
 ```
 
 Your data folder should look like this:
@@ -82,21 +89,28 @@ Scout is source-agnostic. Any text-based source can feed the substrate: chat exp
 
 **macOS users:** The Mac App Store Telegram app cannot export data. Install **Telegram Lite** first (search *"Telegram Lite Mac App Store"* in a web browser, then click the Apple App Store link from the search results, not from inside the App Store app). First login enforces a mandatory 24-hour security lock before export is available. See [`docs/ingest-guide.md`](docs/ingest-guide.md) for the full walkthrough.
 
-1. **Export a chat.** In Telegram Lite (macOS) or Telegram Desktop (Windows / Linux): open a chat → three vertical dots (⋮) → **Export chat history** → format: **JSON** → **Export**.
+**Before the commands:** the steps below reference `$DOSSIER_ROOT` as a shell variable. Set it once in your terminal (the `.env` file configures Scout itself, not your terminal):
+
+```bash
+export DOSSIER_ROOT=/absolute/path/to/your/data
+mkdir -p "$DOSSIER_ROOT/sources"
+```
+
+1. **Export a chat.** In Telegram Lite (macOS) or Telegram Desktop (Windows / Linux): use **Settings → Advanced → Export Telegram Data** → check **Bot chats** (and any other chats you want) → uncheck all media if you only want text → format: **Machine-readable JSON** → **Export**. (The per-chat "three vertical dots → Export chat history" menu may not offer the JSON option on all versions.)
 
 2. **Convert to markdown.**
    ```bash
-   python scripts/telegram-to-md.py /path/to/result.json --output-dir $DOSSIER_ROOT/sources/telegram/
+   python3 scripts/telegram-to-md.py /path/to/result.json --output-dir "$DOSSIER_ROOT/sources/telegram/"
    ```
 
 3. **Build the substrate index.**
    ```bash
-   python scripts/build-index.py --dossier-root $DOSSIER_ROOT
+   python3 scripts/build-index.py --dossier-root "$DOSSIER_ROOT"
    ```
 
 4. **Restart Scout** (Ctrl+C, then `npm run dev`).
 
-5. **See your data.** A new **Telegram** workspace appears on the home page with your chats indexed and searchable.
+5. **See your data.** A new **Telegram** workspace appears on the home page. Your chats are browsable under **Chats** and findable by chat name, workspace, and file. (Full message-body search is on the roadmap; today's search matches titles, IDs, tags, and summaries.)
 
 ### Ready-to-use converters and destinations
 
@@ -110,7 +124,7 @@ Scout is source-agnostic. Any text-based source can feed the substrate: chat exp
 | **Anthropic Cowork / Team** | Not yet supported. [Open an issue](https://github.com/diannekrouse/Scout/issues) with an example export and we'll add a converter. | (pending) |
 | **PDFs** | Any PDF-to-markdown tool (`pdftotext`, `marker`, `docling`) | `$DOSSIER_ROOT/sources/pdfs/` |
 
-After adding new files to `sources/`, always re-run `python scripts/build-index.py --dossier-root $DOSSIER_ROOT` to update the index. Scout re-reads the substrate on every page load, so restarting the dev server is optional but ensures nothing is cached.
+After adding new files to `sources/`, always re-run `python3 scripts/build-index.py --dossier-root "$DOSSIER_ROOT"` to update the index. Scout re-reads the substrate on every page load, so restarting the dev server is optional but ensures nothing is cached.
 
 See [`docs/ingest-guide.md`](docs/ingest-guide.md) for full instructions on each source type, including the pattern for writing new converters.
 
@@ -127,8 +141,8 @@ $DOSSIER_ROOT/
 │   ├── workspaces.json         { workspaces: [...] }      id, name, color, description
 │   ├── master-index.json       { files: [...] }           one entry per source file
 │   ├── segments.json           { segments: [...] }        topic-level chunks of chats
-│   ├── concepts.json           { concepts: [...] } or bare array
-│   └── concept-graph.json      { edges: [...] } or bare array of relationships
+│   ├── concepts.json           { concepts: [...] } or bare array  named ideas and entities, each linking back to source segments
+│   └── concept-graph.json      { edges: [...] } or bare array of typed relationships between concepts
 └── sources/                    raw .md / .txt source files (read-only)
 ```
 
@@ -170,7 +184,7 @@ Scout ships with one built-in theme, `savanna` (warm gold and peach with a leopa
 | `/concepts/[id]` | One concept: source segments, related concepts, cross-workspace refs |
 | `/sources` | Source library, grouped by platform |
 | `/segments` | Segment library with workspace and tag filters |
-| `/search?q=…` | Universal search across every workspace, every chat, every document |
+| `/search?q=…` | Search concept names, segment titles and summaries, source titles, filenames, and tags across every visible workspace (message-body search is on the roadmap) |
 | `/bundles` | Compiled bundles ledger (Markdown and JSON exports) |
 | `/archive?state=…` | Lifecycle browser: toggle between active, archived, forgotten |
 | `/curate` | Bulk lifecycle operations |

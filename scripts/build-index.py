@@ -136,6 +136,17 @@ def migrate_legacy_entry(entry):
 
 
 def build_index(dossier_root):
+    # Guard against an unset $DOSSIER_ROOT that expanded to an empty string
+    # in the caller's shell. Without this, Path("").resolve() gives the cwd,
+    # which is almost never what the user meant.
+    if not dossier_root or str(dossier_root).strip() in ("", "."):
+        if not dossier_root or str(dossier_root).strip() == "":
+            print(f"[error] --dossier-root is empty. This usually means $DOSSIER_ROOT is unset")
+            print(f"        in your shell. Set it first with:")
+            print(f"          export DOSSIER_ROOT=/absolute/path/to/your/data")
+            print(f"        then rerun this command.")
+            return 1
+
     root = Path(dossier_root).expanduser().resolve()
     sources_dir = root / "sources"
     index_dir = root / "index"
