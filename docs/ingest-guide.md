@@ -182,6 +182,28 @@ $DOSSIER_ROOT/sources/chatgpt/
 
 One markdown file per conversation, named by date and title. Each file has a header with title, date, message count, and source, followed by every message with sender and timestamp preserved.
 
+### Review-first workflow (scan, mark, import)
+
+If you want a per-conversation human pass before anything touches disk (for private chats especially), use the three-step review flow:
+
+```bash
+# 1. Scan: writes a review CSV, imports nothing, changes no state
+python3 scripts/chatgpt-to-md.py ~/Downloads/<export-folder> \
+    --output-dir "$DOSSIER_ROOT/sources/chatgpt/" \
+    --keywords "your,topics,here" \
+    --scan --report ~/Desktop/chatgpt-review.csv
+
+# 2. Open the CSV in Numbers or Excel. Put Y in the `import` column for every
+#    conversation you want. Save as CSV.
+
+# 3. Import only the marked rows
+python3 scripts/chatgpt-to-md.py ~/Downloads/<export-folder> \
+    --output-dir "$DOSSIER_ROOT/sources/chatgpt/" \
+    --manifest ~/Desktop/chatgpt-review.csv
+```
+
+The review CSV has an `import` column first (blank, for your marks) and the conversation `id` last (how the manifest matches rows). Rows marked N or left blank are skipped; conversations missing from the manifest are skipped and counted as UNREVIEWED in the summary. Hard-exclude filters still veto even Y-marked rows, as a fail-safe.
+
 ### Update-aware re-imports
 
 The converter maintains a small state file at `<output-dir>/.import-state.json` tracking each conversation's last known message count and update timestamp. On subsequent runs (say, months later with a fresh export):

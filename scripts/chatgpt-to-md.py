@@ -37,8 +37,21 @@ Report CSV (matches the chatgpt-export-review spreadsheet structure):
 
 Get the export from ChatGPT:
     Settings > Data controls > Export data
-    (You'll receive a download link via email; unzip and find
-    conversations.json at the top level.)
+    (You'll receive a download link via email. Unzip it. Older exports have a
+    single conversations.json; newer exports are SHARDED into
+    conversations-000.json, conversations-001.json, ... In either case you can
+    simply pass the unzipped export FOLDER as the input path and every shard
+    is loaded and merged automatically.)
+
+Review-first workflow (scan, mark, import):
+    1. --scan --report review.csv   scans WITHOUT importing; writes a review
+       CSV with an empty `import` column first and the conversation `id` last.
+    2. Open the CSV in Numbers/Excel, put Y in the `import` column for every
+       conversation you want, save as CSV.
+    3. --manifest review.csv        imports ONLY rows marked Y (yes/true/1/keep
+       also accepted). Rows marked N or left blank are skipped. Conversations
+       not present in the manifest are skipped and counted as UNREVIEWED.
+       Hard-exclude filters still veto even Y rows, as a fail-safe.
 
 Example
 -------
@@ -68,6 +81,44 @@ from pathlib import Path
 
 
 STATE_FILENAME = ".import-state.json"
+
+YES_VALUES = {"y", "yes", "true", "1", "keep"}
+
+
+def load_conversations(input_path):
+    """Load a ChatGPT export: single conversations.json, one shard file, or a
+    directory containing conversations*.json shards (merged in order)."""
+    p = Path(input_path).expanduser().resolve()
+    if p.is_dir():
+        shards = sorted(p.glob("conversations*.json"))
+        if not shards:
+            print(f"[error] No conversations*.json found in {p}")
+            return None
+        data = []
+        for s in shards:
+            with open(s, encoding="utf-8") as f:
+                part = json.load(f)
+            if isinstance(part, list):
+                data.extend(part)
+            else:
+                print(f"[warn] {s.name} is not a list; skipped")
+        print(f"[load] {len(shards)} shard(s), {len(data)} conversations")
+        return data
+    with open(p, encoding="utf-8") as f:
+        data = json.load(f)
+    return data if isinstance(data, list) else None
+
+
+def load_manifest(manifest_path):
+    """Read a review CSV; return {conversation_id: keep_bool}."""
+    decisions = {}
+    with open(Path(manifest_path).expanduser().resolve(), encoding="utf-8-sig", newline="") as f:
+        for row in csv.DictReader(f):
+            cid = (row.get("id") or "").strip()
+            if not cid:
+                continue
+            decisions[cid] = (row.get("import") or "").strip().lower() in YES_VALUES
+    return decisions
 
 
 # ------------------------- Utilities ----------------------------------------
@@ -288,6 +339,7 @@ def write_report(report_rows, keywords, report_path):
     report_path.parent.mkdir(parents=True, exist_ok=True)
 
     core_columns = [
+        "import",
         "title",
         "match_status",
         "existing_filename",
@@ -300,7 +352,7 @@ def write_report(report_rows, keywords, report_path):
         "excluded_reason",
     ]
     keyword_columns = [f"hits:{kw.strip()}" for kw in keywords if kw.strip()]
-    all_columns = core_columns + keyword_columns
+    all_columns = core_columns + keyword_columns + ["id"]
 
     with open(report_path, "w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=all_columns, extrasaction="ignore")
@@ -313,21 +365,20 @@ def write_report(report_rows, keywords, report_path):
 
 
 def convert(json_path, output_dir, keywords=None, exclude_title=None,
-            exclude_keyword=None, report_path=None):
+            exclude_keyword=None, report_path=None, scan=False, manifest_path=None):
     keywords = keywords or []
     exclude_title = exclude_title or []
     exclude_keyword = exclude_keyword or []
 
-    json_path = Path(json_path).expanduser().resolve()
     output_dir = Path(output_dir).expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    with open(json_path, encoding="utf-8") as f:
-        data = json.load(f)
-
-    if not isinstance(data, list):
+    data = load_conversations(json_path)
+    if data is None:
         print(f"[error] Expected a list of conversations at {json_path}")
         return 1
+
+    manifest = load_manifest(manifest_path) if manifest_path else None
 
     state = load_state(output_dir)
 
@@ -336,6 +387,8 @@ def convert(json_path, output_dir, keywords=None, exclude_title=None,
     unchanged = 0
     excluded = 0
     empty = 0
+    manifest_skipped = 0
+    unreviewed = 0
 
     report_rows = []
 
@@ -373,12 +426,21 @@ def convert(json_path, output_dir, keywords=None, exclude_title=None,
         elif not formatted:
             empty += 1
             continue
+        elif manifest is not None and conv_id not in manifest:
+            match_status = "UNREVIEWED"
+            existing_filename = (state["conversations"].get(conv_id, {}) or {}).get("filename", "")
+            unreviewed += 1
+        elif manifest is not None and not manifest[conv_id]:
+            match_status = "SKIPPED"
+            existing_filename = (state["conversations"].get(conv_id, {}) or {}).get("filename", "")
+            manifest_skipped += 1
         else:
             match_status, existing_filename = compare_to_state(
                 conv_id, message_count, update_time, state
             )
 
         row = {
+            "import": "",
             "title": title,
             "match_status": match_status,
             "existing_filename": existing_filename or "",
@@ -392,9 +454,13 @@ def convert(json_path, output_dir, keywords=None, exclude_title=None,
         }
         for kw in keywords:
             row[f"hits:{kw.strip()}"] = keyword_hits.get(kw, 0)
+        row["id"] = conv_id
         report_rows.append(row)
 
-        if match_status in ("EXCLUDED", "SAME"):
+        if scan:
+            continue
+
+        if match_status in ("EXCLUDED", "SAME", "SKIPPED", "UNREVIEWED"):
             if match_status == "SAME":
                 unchanged += 1
             continue
@@ -425,18 +491,25 @@ def convert(json_path, output_dir, keywords=None, exclude_title=None,
         elif match_status == "UPDATED":
             written_updated += 1
 
-    save_state(state, output_dir)
+    if not scan:
+        save_state(state, output_dir)
 
     if report_path:
         write_report(report_rows, keywords, report_path)
 
-    print(f"[wrote] {output_dir}")
+    if scan:
+        print(f"[scan] no files written, no state changed")
+    else:
+        print(f"[wrote] {output_dir}")
     summary_parts = [
         f"{written_new} new",
         f"{written_updated} updated",
         f"{unchanged} unchanged",
         f"{excluded} excluded",
     ]
+    if manifest is not None:
+        summary_parts.append(f"{manifest_skipped} skipped by manifest")
+        summary_parts.append(f"{unreviewed} unreviewed (not in manifest)")
     if empty:
         summary_parts.append(f"{empty} empty/skipped")
     print(f"        {', '.join(summary_parts)}")
@@ -451,7 +524,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Convert ChatGPT conversations.json export to Markdown for Scout."
     )
-    parser.add_argument("json_path", help="Path to conversations.json from ChatGPT export")
+    parser.add_argument("json_path", help="Path to conversations.json OR the unzipped export folder (sharded exports)")
     parser.add_argument(
         "--output-dir",
         default="sources/chatgpt/",
@@ -473,7 +546,21 @@ def main():
         "--report",
         help="Write a report CSV to this path (match_status, hits per keyword, primary topics, etc.)",
     )
+    parser.add_argument(
+        "--scan",
+        action="store_true",
+        help="Scan only: write the report CSV, import nothing, change no state. Requires --report.",
+    )
+    parser.add_argument(
+        "--manifest",
+        help="Path to a review CSV (from --scan) with the import column marked; only Y rows import",
+    )
     args = parser.parse_args()
+
+    if args.scan and not args.report:
+        parser.error("--scan requires --report (the review CSV is the whole point of a scan)")
+    if args.scan and args.manifest:
+        parser.error("--scan and --manifest are mutually exclusive")
 
     keywords = [k.strip() for k in (args.keywords or "").split(",") if k.strip()]
     exclude_title = [t.strip() for t in (args.exclude_title_contains or "").split(",") if t.strip()]
@@ -486,6 +573,8 @@ def main():
         exclude_title=exclude_title,
         exclude_keyword=exclude_keyword,
         report_path=args.report,
+        scan=args.scan,
+        manifest_path=args.manifest,
     ) or 0
 
 
