@@ -399,24 +399,29 @@ Restart Scout (`Ctrl+C` then `npm run dev`) or just reload the browser page. New
 
 ### Build segments (recommended)
 
-To turn the raw source files into topic-coherent segments so segment cards, source-window line-highlighting, and search over segment titles all work, run:
+To turn raw source files into topic-sized segments so segment cards, source-window line-highlighting, and search over segment titles all work, run:
 
 ```bash
 python3 scripts/segment.py --dossier-root "$DOSSIER_ROOT"
 ```
 
-This reads `master-index.json` and produces `segments.json`. Splits happen at (in order):
-- `## USER` / `## You` markers (one segment per user turn — matches ChatGPT, Grok, and manually-formatted chat exports)
-- `### <timestamp> - <Sender>` message headers (matches our converters for Telegram, Claude.ai, Claude Code, Codex)
-- Fallback to fixed word-count chunks (default: ~800 words per segment)
+This reads `master-index.json` and produces `segments.json`. Segments are **topic-sized** (default ~1,500 words), not per-message: turn markers act as candidate boundaries, and content accumulates until the target size before a segment closes at the next marker. A long mixed conversation covering three different projects becomes a handful of readable topic chunks, each drillable to its exact source lines. A 60,000-word chat becomes roughly 25-40 topic segments, not hundreds of per-turn slices.
 
-Each segment gets a title (from the first meaningful line or header), a summary (first prose sentence + word count + top topics), a tag list (top significant words), and preserved `start_line` / `end_line` so Scout's source window can highlight the exact range.
+Boundary detection (first match wins per file):
+- `## USER` / `## You` markers (ChatGPT, Grok, and similar exports)
+- `### <timestamp> - <Sender>` message headers (our Telegram, Claude.ai, Claude Code, and Codex converters)
+- Fallback: fixed word-count chunks
+
+Each segment gets a title (first header or first meaningful line), a summary (first prose sentence + word count + top topics), tags (top significant words), and preserved `start_line` / `end_line` so Scout's source window highlights the exact range.
 
 Optional flags:
-- `--target-words 800` — target words per segment for message-chunk and word-chunk strategies
-- `--min-words 120` — segments below this are merged with a neighbor
+- `--target-words 1500` — topic-chunk size to aim for (smaller value = more, finer segments; useful for short test chats)
+- `--min-words 120` — segments below this merge with a neighbor
+- `--force` — required to overwrite a `segments.json` this script did not generate
 
-The segmenter regenerates `segments.json` on every run. Safe to re-run any time after adding new sources.
+**Safety note:** the segmenter regenerates `segments.json` entirely on each run. If your existing `segments.json` was hand-curated or produced by another pipeline, the script refuses to touch it unless you pass `--force`. This protects curated substrates from accidental replacement.
+
+Concept extraction (cross-chat unification: one concept linking every segment about the same idea across many chats, with `related_concepts` edges) is the next layer up and is not yet public. Segments alone already enable the provenance drill-through that is Scout's core.
 
 ### Concept extraction
 

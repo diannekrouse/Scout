@@ -12,11 +12,15 @@ Usage:
     python3 segment.py --dossier-root $DOSSIER_ROOT --min-words 150
 
 Split heuristics (applied in order per file):
-  1. USER markers (## USER / ## You / ### <timestamp> - You / ### <timestamp> - User)
-     -> one segment per user turn plus its assistant reply, merged forward if too small
-  2. Message headers (### <timestamp> - <Sender>)
-     -> grouped into ~target-words chunks
+  1. USER markers (## USER / ## You) as candidate boundaries -> content
+     accumulates to ~target-words, then the segment closes at the next
+     marker. Segments are TOPIC-sized chunks, not per-turn slices: a long
+     mixed conversation becomes a handful of readable topic segments.
+  2. Message headers (### <timestamp> - <Sender>) -> same accumulation
   3. Fallback: word-based chunks at line boundaries
+
+Safety: refuses to overwrite a segments.json it did not generate itself
+(hand-curated substrates stay safe). Pass --force to regenerate anyway.
 
 Output segments match the reader's SegmentSchema:
   segment_id, source_file, file_id, start_line, end_line, word_count,
@@ -37,8 +41,9 @@ from pathlib import Path
 
 # -------- Configuration defaults ----------------------------------------------
 
-DEFAULT_TARGET_WORDS = 800
+DEFAULT_TARGET_WORDS = 1500
 DEFAULT_MIN_WORDS = 120
+GENERATED_BY = "scout scripts/segment.py"
 MAX_TITLE_CHARS = 80
 MAX_SUMMARY_CHARS = 220
 MAX_TAGS_PER_SEGMENT = 6
@@ -229,84 +234,59 @@ def make_segment(file_entry, seg_num, start_line, end_line, text, dossier_root):
 def segment_lines(lines, target_words, min_words):
     """Return list of (start_line_0idx, end_line_0idx, text) tuples.
 
-    Strategy:
-      1. If USER markers present (>=2): each marker starts a segment; small
-         adjacent segments (< min_words) merge forward. USER markers are
-         intentionally treated as strong boundaries: each user turn is its
-         own segment.
-      2. Else if timestamped message headers present (>=2): group messages
-         into ~target-words chunks (Telegram/Claude/Codex converter outputs).
-      3. Else: fixed word-count chunks at line boundaries.
+    Segments aim for TOPIC-sized chunks (~target_words each), not per-message
+    slices. Turn markers are candidate boundaries, not mandatory splits:
+    content accumulates until it reaches target_words, then the segment
+    closes at the next marker. A long mixed conversation about several
+    projects becomes a handful of readable topic segments, the way a human
+    would actually skim it.
+
+    Marker sources (first match wins per file):
+      1. USER markers (## USER / ## You) — ChatGPT and Grok style exports
+      2. Timestamped message headers (### YYYY-MM-DD HH:MM:SS - Sender) —
+         the shape the Telegram / Claude.ai / Claude Code / Codex converters emit
+      3. Fallback: fixed word-count chunks at line boundaries
     """
     if not lines:
         return []
 
     total_words = sum(word_count(line) for line in lines)
 
-    # Very small file: one segment covers everything
-    if total_words < min_words * 2:
+    # Small file: the whole thing is one topic-sized segment
+    if total_words < max(min_words * 2, (target_words * 4) // 3):
         return [(0, len(lines), "".join(lines))]
 
     user_markers = find_user_markers(lines)
     if user_markers and len(user_markers) >= 2:
-        return _segment_per_marker(lines, user_markers, min_words)
+        return _segment_at_markers(lines, user_markers, target_words, min_words)
 
     msg_markers = find_message_markers(lines)
     if msg_markers and len(msg_markers) >= 2:
-        return _segment_by_message_chunks(lines, msg_markers, target_words, min_words)
+        return _segment_at_markers(lines, msg_markers, target_words, min_words)
 
     return _segment_by_word_chunks(lines, target_words)
 
 
-def _segment_per_marker(lines, marker_indices, min_words):
-    """One segment per marker; adjacent tiny segments merge forward."""
-    # If content precedes the first marker, keep it as its own segment when it's substantial
+def _segment_at_markers(lines, marker_indices, target_words, min_words):
+    """Accumulate content to ~target_words, closing segments at marker boundaries."""
     raw = []
-    if marker_indices[0] > 0:
-        pre_text = "".join(lines[:marker_indices[0]])
+    boundaries = list(marker_indices)
+    if boundaries[0] > 0:
+        pre_text = "".join(lines[:boundaries[0]])
         if word_count(pre_text) >= min_words:
-            raw.append((0, marker_indices[0], pre_text))
+            # Substantial preamble: keep it as its own segment
+            raw.append((0, boundaries[0], pre_text))
+        else:
+            # Small preamble (file header block): fold into the first segment
+            boundaries[0] = 0
 
-    bounded = marker_indices + [len(lines)]
-    for i in range(len(bounded) - 1):
-        start = bounded[i]
-        end = bounded[i + 1]
-        text = "".join(lines[start:end])
-        raw.append((start, end, text))
-
-    # Merge tiny segments forward (or backward for the last one)
-    merged = []
-    i = 0
-    while i < len(raw):
-        start, end, text = raw[i]
-        while word_count(text) < min_words and (i + 1) < len(raw):
-            next_start, next_end, next_text = raw[i + 1]
-            end = next_end
-            text = text + next_text
-            i += 1
-        if word_count(text) < min_words and merged:
-            prev_start, prev_end, prev_text = merged.pop()
-            start = prev_start
-            text = prev_text + text
-        merged.append((start, end, text))
-        i += 1
-    return merged
-
-
-def _segment_by_message_chunks(lines, marker_indices, target_words, min_words):
-    """Group timestamped message headers into ~target_words chunks."""
-    bounded = marker_indices + [len(lines)]
-    raw = []
-    if bounded[0] > 0:
-        pre_text = "".join(lines[:bounded[0]])
-        if word_count(pre_text) >= min_words:
-            raw.append((0, bounded[0], pre_text))
-
+    bounded = boundaries + [len(lines)]
     i = 0
     while i < len(bounded) - 1:
         start = bounded[i]
         end = bounded[i + 1]
         acc_words = word_count("".join(lines[start:end]))
+        # Keep absorbing turns until the topic-sized target is reached
         while acc_words < target_words and (i + 2) < len(bounded):
             i += 1
             end = bounded[i + 1]
@@ -314,10 +294,10 @@ def _segment_by_message_chunks(lines, marker_indices, target_words, min_words):
         raw.append((start, end, "".join(lines[start:end])))
         i += 1
 
-    # Merge tiny trailing segment backward
-    if raw and word_count(raw[-1][2]) < min_words and len(raw) >= 2:
+    # Merge a tiny trailing segment backward so a file never ends on a fragment
+    if len(raw) >= 2 and word_count(raw[-1][2]) < min_words:
         prev_start, _, prev_text = raw[-2]
-        last_start, last_end, last_text = raw[-1]
+        _, last_end, last_text = raw[-1]
         raw = raw[:-2] + [(prev_start, last_end, prev_text + last_text)]
     return raw
 
@@ -342,13 +322,32 @@ def _segment_by_word_chunks(lines, target_words):
 # -------- Main ----------------------------------------------------------------
 
 
-def build_segments(dossier_root, target_words, min_words):
+def build_segments(dossier_root, target_words, min_words, force=False):
     dossier_root = Path(dossier_root).expanduser().resolve()
 
     if not (dossier_root / "index" / "master-index.json").exists():
         print(f"[error] {dossier_root / 'index' / 'master-index.json'} does not exist.")
         print(f"        Run build-index.py first to register your source files.")
         return 1
+
+    # Safety guard: never silently replace a segments.json this script did
+    # not generate. Hand-curated or pipeline-built segment files can carry
+    # personas, custom workspace scoring, and lifecycle edits that a
+    # regeneration would destroy.
+    seg_path = dossier_root / "index" / "segments.json"
+    if seg_path.exists() and not force:
+        try:
+            with open(seg_path, encoding="utf-8") as f:
+                existing = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            existing = None
+        if existing is not None and existing.get("generated_by") != GENERATED_BY:
+            print(f"[error] {seg_path.relative_to(dossier_root)} already exists and was not")
+            print(f"        generated by this script. It may contain hand-curated segments")
+            print(f"        (personas, custom workspace assignments, lifecycle edits) that")
+            print(f"        this run would REPLACE entirely.")
+            print(f"        If you are sure you want to regenerate, re-run with --force.")
+            return 1
 
     master = load_master_index(dossier_root)
     files = master.get("files", [])
@@ -375,6 +374,7 @@ def build_segments(dossier_root, target_words, min_words):
 
     output = {
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "generated_by": GENERATED_BY,
         "total_files_processed": files_processed,
         "total_segments": len(all_segments),
         "workspace_counts": dict(workspace_counts),
@@ -417,14 +417,19 @@ def main():
         default=DEFAULT_MIN_WORDS,
         help=f"Minimum words per segment before merging (default: {DEFAULT_MIN_WORDS})",
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite a segments.json that was not generated by this script",
+    )
     args = parser.parse_args()
 
-    if not args.dossier_root or str(args.dossier_root).strip() in ("", ".") and str(args.dossier_root).strip() == "":
+    if not str(args.dossier_root or "").strip():
         print("[error] --dossier-root is empty. Set $DOSSIER_ROOT in your shell first:")
         print("          export DOSSIER_ROOT=/absolute/path/to/your/data")
         return 1
 
-    return build_segments(args.dossier_root, args.target_words, args.min_words) or 0
+    return build_segments(args.dossier_root, args.target_words, args.min_words, force=args.force) or 0
 
 
 if __name__ == "__main__":
