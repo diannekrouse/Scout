@@ -316,6 +316,33 @@ One markdown file per session, named by date and thread title. Each file has a h
 
 By default, reasoning/thinking blocks and system/developer messages are stripped. Use `--include-thinking` and/or `--include-system` to keep them.
 
+## Curated catalog spreadsheets
+
+If you maintain a hand-curated research catalog in a spreadsheet (each row one idea/paper/prototype, with a summary, verbatim excerpt, source permalink, tags, contributors, and status), Scout ships a converter that turns it into a full workspace: one markdown source file per row plus one concept entry per row, with the excerpt as drillable source material and the original permalink preserved as external provenance.
+
+### Export from Google Sheets
+
+**File → Download → Comma Separated Values (.csv)** (downloads the active tab).
+
+### Convert
+
+```bash
+python3 scripts/catalog-to-md.py ~/Downloads/catalog.csv \
+    --dossier-root "$DOSSIER_ROOT" \
+    --workspace researcher-catalog
+
+python3 scripts/build-index.py --dossier-root "$DOSSIER_ROOT"
+python3 scripts/segment.py     --dossier-root "$DOSSIER_ROOT"
+```
+
+Expected columns (extras are preserved; missing ones are skipped): `Tiers (Filter)`, `title_or_label`, `Topic`, `item_type`, `MVP or Future Feature / Idea`, `Summary`, `Status`, `Ben_input`, `Contributors`, `Source_links`, `mattermost_exerpt`, `Follow_up`, `tags`, `Date Surfaced`.
+
+Each row becomes a concept card in Scout with the tier as its category, the summary on the card, tags parsed from newline/comma-separated cells, and a `source_url` field carrying the original thread permalink. Clicking through to the source segment shows the verbatim excerpt in the source window.
+
+### Updating
+
+The CSV is the source of truth. When the spreadsheet changes, re-download the CSV and re-run the converter: it fully regenerates its own workspace's source files and concepts file, and never touches other workspaces.
+
 ## Anthropic Cowork / Claude Team
 
 Cowork and Claude for Work / Claude Team export formats are not yet supported in this converter. If you have access to a Cowork/Team workspace and can share an example export (or the format schema), [open an issue](https://github.com/diannekrouse/Scout/issues) and we'll add a converter. In the meantime, individual conversations from a team claude.ai account work with the `claude-ai-to-md.py` converter above.
