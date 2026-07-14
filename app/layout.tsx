@@ -6,6 +6,14 @@ import RightBand from "@/components/ui/RightBand";
 import EasterEgg from "@/components/ui/EasterEgg";
 import { loadDossierBrandConfig } from "@/lib/dossier";
 
+// Scout's core promise is that every page load re-reads the substrate
+// (re-instantiation, not retrieval). Without this, `next build` prerenders
+// the parameterless routes (/, /chats, /concepts, /sources) as static HTML
+// against whatever DOSSIER_ROOT was set at build time, and a production
+// server (`npm start`) keeps serving that frozen snapshot regardless of the
+// live environment. Forcing the whole tree dynamic keeps every route honest.
+export const dynamic = "force-dynamic";
+
 // Dynamic metadata so the browser-tab title matches the brand of whichever
 // substrate is currently active. Author + open-graph tags carry the
 // authorship credit forward into shared links and search-engine listings.
