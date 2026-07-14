@@ -286,7 +286,9 @@ def build_index(dossier_root):
         if len(missing) > 5:
             print(f"        ... and {len(missing) - 5} more")
 
-    print(f"\nRestart Scout (Ctrl+C then npm run dev) to see your data.")
+    print(f"\nNext step: python3 scripts/segment.py --dossier-root \"$DOSSIER_ROOT\"")
+    print(f"           (produces segment cards + source-window highlights)")
+    print(f"Then restart Scout (Ctrl+C then npm run dev) to see your data.")
     return 0 if not missing else 2
 
 

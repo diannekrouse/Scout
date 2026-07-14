@@ -397,7 +397,30 @@ Keep converters standalone (Python stdlib only, no third-party dependencies unle
 
 Restart Scout (`Ctrl+C` then `npm run dev`) or just reload the browser page. New sources appear in the source library and in search results immediately, because Scout re-reads the substrate on every load.
 
-For concept extraction and workspace assignment (turning raw sources into a concept-graph with related_concepts), see the segmentation and concept-build scripts in the personal Scout instance at `~/qi7/qi7-dossier/apps/dossier-reader/scripts/` for a working example. That layer is separate from ingest and can be added later.
+### Build segments (recommended)
+
+To turn the raw source files into topic-coherent segments so segment cards, source-window line-highlighting, and search over segment titles all work, run:
+
+```bash
+python3 scripts/segment.py --dossier-root "$DOSSIER_ROOT"
+```
+
+This reads `master-index.json` and produces `segments.json`. Splits happen at (in order):
+- `## USER` / `## You` markers (one segment per user turn — matches ChatGPT, Grok, and manually-formatted chat exports)
+- `### <timestamp> - <Sender>` message headers (matches our converters for Telegram, Claude.ai, Claude Code, Codex)
+- Fallback to fixed word-count chunks (default: ~800 words per segment)
+
+Each segment gets a title (from the first meaningful line or header), a summary (first prose sentence + word count + top topics), a tag list (top significant words), and preserved `start_line` / `end_line` so Scout's source window can highlight the exact range.
+
+Optional flags:
+- `--target-words 800` — target words per segment for message-chunk and word-chunk strategies
+- `--min-words 120` — segments below this are merged with a neighbor
+
+The segmenter regenerates `segments.json` on every run. Safe to re-run any time after adding new sources.
+
+### Concept extraction
+
+Not yet public. Concepts (named ideas/entities linking multiple segments together) are still hand-curated or built via a private pipeline. Concept extraction from segments is on the roadmap; segments alone already enable most of Scout's differentiator (line-level provenance drill-through).
 
 ## Substrate rule reminder
 
