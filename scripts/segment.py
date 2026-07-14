@@ -228,6 +228,9 @@ def make_segment(file_entry, seg_num, start_line, end_line, text, dossier_root):
         "workspace_secondary": [],
         "tags": tags,
         "lifecycle": "active",
+        # Time axis for chronology views and the (roadmap) knowledge graph:
+        # inherit the source file's detected date.
+        "source_date": file_entry.get("date_detected"),
     }
 
 
