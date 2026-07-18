@@ -1,0 +1,368 @@
+<title>Scout — Tracking</title>
+<style>
+  /* ============ Savanna tokens — day (light) ============ */
+  :root {
+    --bg: #F4EAD3;
+    --bg-rad1: rgba(79, 168, 86, 0.16);
+    --bg-rad2: rgba(232, 155, 92, 0.18);
+    --bg-rad3: rgba(91, 163, 212, 0.10);
+    --surface: #FFFDF7;
+    --panel: #FAF4E6;
+    --ink-bright: #1F1611;
+    --ink-body: #3A2D24;
+    --ink-muted: #7A6B58;
+    --ink-dim: #A8987F;
+    --line: #E8DDC2;
+    --line2: #D9CAA9;
+    --accent: #3D8A44;          /* bandana green — interactive */
+    --accent-wash: rgba(79, 168, 86, 0.14);
+    --gold: #B6753A;            /* leopard gold — evidence ink */
+    --gold-wash: rgba(232, 155, 92, 0.20);
+    --spoor: #E89B5C;
+    --mauve: #7A5C88;           /* category / relation pills */
+    --mauve-wash: rgba(155, 123, 168, 0.16);
+    --ws1: #35803F; --ws1t: #2C6B35;   /* scout-dev  (validated) */
+    --ws2: #E89B5C; --ws2t: #A05E22;   /* claude-code (validated) */
+    --ws3: #2E72A8; --ws3t: #275F8C;   /* voyager    (validated) */
+    --edge-ink: rgba(58, 45, 36, 0.42);
+    --btn-bg: #1F1611; --btn-fg: #FAF4E6;
+    --shadow: 0 4px 24px -8px rgba(58, 46, 32, 0.10), 0 2px 6px -2px rgba(58, 46, 32, 0.05);
+    color-scheme: light;
+  }
+  /* ============ Night tracking (dark) ============ */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #171210;
+      --bg-rad1: rgba(79, 168, 86, 0.10);
+      --bg-rad2: rgba(232, 155, 92, 0.08);
+      --bg-rad3: rgba(91, 163, 212, 0.06);
+      --surface: #221A15;
+      --panel: #2A2118;
+      --ink-bright: #F4EBDA;
+      --ink-body: #D8CCB4;
+      --ink-muted: #A99A82;
+      --ink-dim: #7E6F5C;
+      --line: #3C3122;
+      --line2: #4A3B2A;
+      --accent: #6FC07A;
+      --accent-wash: rgba(111, 192, 122, 0.14);
+      --gold: #E0A468;
+      --gold-wash: rgba(224, 164, 104, 0.16);
+      --spoor: #E0A468;
+      --mauve: #C9A9D6;
+      --mauve-wash: rgba(176, 143, 192, 0.20);
+      --ws1: #1F7845; --ws1t: #7CC98A;   /* validated (dark) */
+      --ws2: #CC803A; --ws2t: #E8A968;   /* validated (dark) */
+      --ws3: #3F8CCB; --ws3t: #7FB8E4;   /* validated (dark) */
+      --edge-ink: rgba(216, 204, 180, 0.38);
+      --btn-bg: #F4EBDA; --btn-fg: #221A15;
+      --shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.45), 0 2px 6px -2px rgba(0, 0, 0, 0.3);
+      color-scheme: dark;
+    }
+  }
+  /* viewer toggle wins in both directions */
+  :root[data-theme="light"] {
+    --bg: #F4EAD3; --bg-rad1: rgba(79,168,86,.16); --bg-rad2: rgba(232,155,92,.18); --bg-rad3: rgba(91,163,212,.10);
+    --surface: #FFFDF7; --panel: #FAF4E6;
+    --ink-bright: #1F1611; --ink-body: #3A2D24; --ink-muted: #7A6B58; --ink-dim: #A8987F;
+    --line: #E8DDC2; --line2: #D9CAA9;
+    --accent: #3D8A44; --accent-wash: rgba(79,168,86,.14);
+    --gold: #B6753A; --gold-wash: rgba(232,155,92,.20); --spoor: #E89B5C;
+    --mauve: #7A5C88; --mauve-wash: rgba(155,123,168,.16);
+    --ws1: #35803F; --ws1t: #2C6B35; --ws2: #E89B5C; --ws2t: #A05E22; --ws3: #2E72A8; --ws3t: #275F8C;
+    --edge-ink: rgba(58,45,36,.42); --btn-bg: #1F1611; --btn-fg: #FAF4E6;
+    --shadow: 0 4px 24px -8px rgba(58,46,32,.10), 0 2px 6px -2px rgba(58,46,32,.05);
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    --bg: #171210; --bg-rad1: rgba(79,168,86,.10); --bg-rad2: rgba(232,155,92,.08); --bg-rad3: rgba(91,163,212,.06);
+    --surface: #221A15; --panel: #2A2118;
+    --ink-bright: #F4EBDA; --ink-body: #D8CCB4; --ink-muted: #A99A82; --ink-dim: #7E6F5C;
+    --line: #3C3122; --line2: #4A3B2A;
+    --accent: #6FC07A; --accent-wash: rgba(111,192,122,.14);
+    --gold: #E0A468; --gold-wash: rgba(224,164,104,.16); --spoor: #E0A468;
+    --mauve: #C9A9D6; --mauve-wash: rgba(176,143,192,.20);
+    --ws1: #1F7845; --ws1t: #7CC98A; --ws2: #CC803A; --ws2t: #E8A968; --ws3: #3F8CCB; --ws3t: #7FB8E4;
+    --edge-ink: rgba(216,204,180,.38); --btn-bg: #F4EBDA; --btn-fg: #221A15;
+    --shadow: 0 4px 24px -8px rgba(0,0,0,.45), 0 2px 6px -2px rgba(0,0,0,.3);
+    color-scheme: dark;
+  }
+
+  /* ============ base ============ */
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink-body);
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(1100px 700px at 100% -5%, var(--bg-rad1), transparent 60%),
+      radial-gradient(900px 800px at -10% 110%, var(--bg-rad2), transparent 60%),
+      radial-gradient(700px 500px at 60% 120%, var(--bg-rad3), transparent 60%);
+    background-attachment: fixed;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  code, .mono { font-family: "JetBrains Mono", "SF Mono", Monaco, Consolas, "Liberation Mono", Menlo, monospace; }
+  .serif { font-family: Fraunces, "Cormorant Garamond", "Iowan Old Style", Georgia, "Times New Roman", serif; }
+  button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  .eyebrow { font-size: 10px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink-dim); font-weight: 700; }
+  .linklike { padding: 0; text-align: left; color: var(--ink-bright); }
+  .linklike:hover { color: var(--accent); }
+
+  /* ============ app frame ============ */
+  #app { height: 100dvh; display: grid; grid-template-rows: auto 1fr; gap: 12px; padding: 14px 16px 16px; }
+  header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .pawmark { width: 30px; height: 30px; color: var(--gold); flex: none; }
+  .brand h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink-bright); line-height: 1.1; }
+  .brand .tag { font-size: 11.5px; color: var(--ink-muted); margin-top: 1px; }
+  .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .seg { display: inline-flex; border: 1px solid var(--line2); border-radius: 999px; overflow: hidden; background: var(--surface); }
+  .seg button { padding: 5px 13px; font-size: 12px; font-weight: 600; color: var(--ink-muted); }
+  .seg button.on { background: var(--accent-wash); color: var(--accent); }
+  .btn { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line2); background: var(--surface);
+         border-radius: 999px; padding: 5px 13px; font-size: 12px; font-weight: 600; color: var(--ink-body); transition: border-color .15s, color .15s; }
+  .btn:hover { border-color: var(--accent); color: var(--ink-bright); }
+  .btn.primary { background: var(--btn-bg); color: var(--btn-fg); border-color: transparent; }
+  .btn.primary:hover { opacity: 0.9; }
+
+  main { display: grid; grid-template-columns: 234px minmax(0, 1fr) 348px; gap: 12px; min-height: 0; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
+
+  /* ============ trailhead rail ============ */
+  #rail { display: flex; flex-direction: column; min-height: 0; padding: 14px 0 10px; }
+  #rail .railhead { padding: 0 14px 8px; }
+  #railList { overflow-y: auto; min-height: 0; flex: 1; padding: 0 8px; }
+  .terr { margin-bottom: 12px; }
+  .terrname { padding: 6px 8px 4px; }
+  .citem { display: flex; align-items: center; gap: 8px; width: 100%; padding: 5px 8px; border-radius: 10px; font-size: 12.5px; color: var(--ink-body); }
+  .citem:hover { background: var(--panel); color: var(--ink-bright); }
+  .citem.on { background: var(--accent-wash); color: var(--ink-bright); font-weight: 700; }
+  .citem.unseen { opacity: 0.4; }
+  .glyph { width: 15px; height: 15px; flex: none; }
+  #trailBlock { border-top: 1px solid var(--line); margin-top: 6px; padding: 10px 14px 0; max-height: 38%; display: flex; flex-direction: column; }
+  #trailBlock .eyebrow { margin-bottom: 6px; }
+  #trailList { overflow-y: auto; min-height: 0; }
+  .trailempty { font-size: 11.5px; color: var(--ink-dim); font-style: italic; padding: 4px 0 8px; }
+  .tstep { display: flex; align-items: center; gap: 7px; padding: 3px 0; font-size: 12.5px; }
+  .paw { width: 13px; height: 13px; fill: var(--gold); flex: none; transform: rotate(-14deg); }
+  .paw.flip { transform: rotate(14deg); }
+  .tstep .via { font-size: 10px; color: var(--mauve); background: var(--mauve-wash); border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
+  .tstep .tdel { color: var(--ink-dim); font-size: 10px; margin-left: auto; padding: 2px 4px; }
+  .tstep .tdel:hover { color: var(--ink-bright); }
+
+  /* ============ stage ============ */
+  #stageCol { display: flex; flex-direction: column; min-width: 0; min-height: 0; gap: 10px; }
+  #hint { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ink-muted);
+          background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 7px 12px; }
+  #hint .hinttext { flex: 1; }
+  #hint b { color: var(--ink-body); font-weight: 600; }
+  #hintClose { margin-left: auto; color: var(--ink-dim); }
+  #stageWrap, #listWrap { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+  #stage { width: 100%; height: 100%; flex: 1; min-height: 0; display: block; }
+  .legend { display: flex; gap: 14px; align-items: center; padding: 8px 16px 2px; flex-wrap: wrap; }
+  .legend .eyebrow { margin-right: 2px; }
+  .lg { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-muted); }
+  .lg svg { width: 13px; height: 13px; }
+
+  /* svg marks */
+  .sector { font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; fill: var(--ink-dim); opacity: 0.75; font-weight: 700; }
+  .edge { fill: none; stroke: var(--edge-ink); transition: stroke .12s, stroke-width .12s; }
+  .edge.hover, .edge.stuck { stroke: var(--ink-bright); }
+  .edgehit { fill: none; stroke: transparent; stroke-width: 16; cursor: pointer; }
+  .spoor { fill: none; stroke: var(--spoor); stroke-width: 6; opacity: 0.30; stroke-linecap: round; }
+  .arrow { fill: var(--edge-ink); }
+  .node { cursor: pointer; }
+  .node .hit { fill: transparent; stroke: none !important; }
+  .node > :is(circle, rect, polygon):not(.hit) { stroke: var(--surface); stroke-width: 2.5; transition: transform .12s; }
+  .node:hover > :is(circle, rect, polygon):not(.hit) { stroke: var(--ink-bright); stroke-width: 2; }
+  .node.ws1 > :is(circle, rect, polygon):not(.hit) { fill: var(--ws1); }
+  .node.ws2 > :is(circle, rect, polygon):not(.hit) { fill: var(--ws2); }
+  .node.ws3 > :is(circle, rect, polygon):not(.hit) { fill: var(--ws3); }
+  .node.unseen { opacity: 0.35; }
+  .glyph.ws1 :is(circle, rect, polygon) { fill: var(--ws1); }
+  .glyph.ws2 :is(circle, rect, polygon) { fill: var(--ws2); }
+  .glyph.ws3 :is(circle, rect, polygon) { fill: var(--ws3); }
+  .nlabel { font-size: 11px; fill: var(--ink-body); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; font-weight: 600; }
+  .center > :is(circle, rect, polygon):not(.rosette) { stroke: var(--surface); stroke-width: 3; }
+  .center.ws1 > :is(circle, rect, polygon):not(.rosette) { fill: var(--ws1); }
+  .center.ws2 > :is(circle, rect, polygon):not(.rosette) { fill: var(--ws2); }
+  .center.ws3 > :is(circle, rect, polygon):not(.rosette) { fill: var(--ws3); }
+  .rosette { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 5 8; opacity: 0.75; }
+  .rosette.r2 { stroke-width: 1.5; stroke-dasharray: 3 10; opacity: 0.45; }
+  .center.ws1 .rosette { stroke: var(--ws1); }
+  .center.ws2 .rosette { stroke: var(--ws2); }
+  .center.ws3 .rosette { stroke: var(--ws3); }
+  .clabel { font-size: 14px; font-weight: 800; fill: var(--ink-bright); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; }
+  .csub { font-size: 10.5px; fill: var(--ink-muted); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+  .empty { font-size: 13px; fill: var(--ink-muted); font-style: italic; }
+
+  /* season scrubber */
+  #season { display: flex; align-items: center; gap: 12px; padding: 9px 16px 12px; border-top: 1px solid var(--line); }
+  #season .eyebrow { flex: none; }
+  #scrub { flex: 1; accent-color: var(--accent); min-width: 80px; }
+  #seasonLabel { font-size: 12px; font-weight: 700; color: var(--ink-bright); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  #playBtn { font-size: 11.5px; color: var(--ink-muted); border: 1px solid var(--line2); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+  #playBtn:hover { color: var(--ink-bright); border-color: var(--accent); }
+
+  /* list view */
+  #listWrap { padding: 14px 16px; overflow: auto; }
+  #listWrap h2 { margin: 0 0 4px; font-size: 15px; color: var(--ink-bright); }
+  #listWrap .sub { font-size: 11.5px; color: var(--ink-muted); margin-bottom: 10px; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-dim); font-weight: 700; padding: 6px 10px; border-bottom: 1px solid var(--line2); white-space: nowrap; }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tbody tr:hover { background: var(--panel); }
+  td code { font-size: 11px; color: var(--ink-muted); }
+  .qcell { font-family: Fraunces, "Cormorant Garamond", "Iowan Old Style", Georgia, serif; font-style: italic; color: var(--ink-muted); max-width: 340px; }
+  .emptycell { color: var(--ink-dim); font-style: italic; }
+  .reltype { font-size: 10px; color: var(--mauve); background: var(--mauve-wash); border-radius: 999px; padding: 1px 8px; white-space: nowrap; font-weight: 600; font-style: normal; }
+
+  /* ============ the ground (source pane) ============ */
+  #ground { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  #quoteCard { border-bottom: 1px solid var(--line); background: var(--panel); padding: 13px 16px 12px; }
+  #quoteCard.stuck { box-shadow: inset 3px 0 0 var(--gold); }
+  #quoteText { font-family: Fraunces, "Cormorant Garamond", "Iowan Old Style", Georgia, serif; font-style: italic;
+               font-size: 15px; line-height: 1.55; color: var(--ink-bright); margin: 0 0 8px; text-wrap: pretty; }
+  #quoteCite { font-family: "JetBrains Mono", "SF Mono", Monaco, Consolas, monospace; font-size: 10px; color: var(--gold); display: block; margin-bottom: 7px; }
+  #quoteRel { font-size: 11.5px; color: var(--ink-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .unstick { color: var(--ink-dim); font-size: 10px; padding: 1px 5px; border: 1px solid var(--line2); border-radius: 999px; }
+  #groundHead { padding: 12px 16px 9px; border-bottom: 1px solid var(--line); }
+  #groundCause { font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); font-weight: 700; margin-bottom: 3px; }
+  #groundTitle { font-size: 13.5px; font-weight: 700; color: var(--ink-bright); line-height: 1.3; margin-bottom: 4px; text-wrap: balance; }
+  #groundMeta { font-size: 10.5px; color: var(--ink-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  #groundMeta code { font-size: 10px; }
+  .chip { font-size: 10px; border-radius: 999px; padding: 1px 8px; font-weight: 700; }
+  .chip.ws1 { color: var(--ws1t); background: color-mix(in srgb, var(--ws1) 16%, transparent); }
+  .chip.ws2 { color: var(--ws2t); background: color-mix(in srgb, var(--ws2) 16%, transparent); }
+  .chip.ws3 { color: var(--ws3t); background: color-mix(in srgb, var(--ws3) 16%, transparent); }
+  #groundLines { overflow-y: auto; min-height: 0; flex: 1; padding: 8px 0 14px; }
+  .srcline { display: flex; gap: 10px; padding: 1px 16px 1px 13px; border-left: 3px solid transparent; }
+  .srcline .ln { font-family: "JetBrains Mono", "SF Mono", Monaco, Consolas, monospace; font-size: 10px; color: var(--ink-dim);
+                 min-width: 2em; text-align: right; padding-top: 2px; user-select: none; font-variant-numeric: tabular-nums; }
+  .srcline .lt { font-family: "JetBrains Mono", "SF Mono", Monaco, Consolas, monospace; font-size: 11.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+  .srcline.hot { background: var(--gold-wash); border-left-color: var(--gold); }
+  .srcline.hot .lt { color: var(--ink-bright); }
+
+  /* ============ compile dialog ============ */
+  dialog { border: 1px solid var(--line2); border-radius: 18px; background: var(--surface); color: var(--ink-body);
+           box-shadow: var(--shadow); padding: 0; width: min(680px, 92vw); }
+  dialog::backdrop { background: rgba(31, 22, 17, 0.4); }
+  .dlghead { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 10px; border-bottom: 1px solid var(--line); }
+  .dlghead h2 { margin: 0; font-size: 15px; color: var(--ink-bright); }
+  .dlgbody { padding: 12px 18px 16px; }
+  .dlgbody .note { font-size: 11.5px; color: var(--ink-muted); margin: 0 0 10px; }
+  #bundleText { width: 100%; height: 300px; resize: vertical; font-family: "JetBrains Mono", Monaco, Consolas, monospace;
+                font-size: 11px; line-height: 1.5; background: var(--panel); color: var(--ink-body);
+                border: 1px solid var(--line2); border-radius: 10px; padding: 10px; }
+  .dlgfoot { display: flex; justify-content: flex-end; gap: 8px; padding: 0 18px 16px; }
+
+  /* ============ responsive ============ */
+  @media (max-width: 1080px) {
+    #app { height: auto; }
+    main { grid-template-columns: 1fr; }
+    #stageCol { order: 1; } #ground { order: 2; max-height: 420px; } #rail { order: 3; max-height: 420px; }
+    #stage { min-height: 460px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+
+<div id="app">
+  <header>
+    <div class="brand">
+      <svg class="pawmark" viewBox="-10 -10 20 20" aria-hidden="true">
+        <g fill="currentColor"><ellipse cx="0" cy="3.6" rx="4.4" ry="3.4"/><circle cx="-4.6" cy="-1.6" r="2"/><circle cx="-1.6" cy="-3.8" r="2.1"/><circle cx="1.8" cy="-3.8" r="2.1"/><circle cx="4.7" cy="-1.6" r="2"/></g>
+      </svg>
+      <div>
+        <div class="eyebrow">Scout · prototype</div>
+        <h1>Tracking</h1>
+        <div class="tag">Follow a thought across your archive — every crossing carries its lines. Demo substrate.</div>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="View">
+        <button id="viewTrack" class="on">Track</button><button id="viewList">List</button>
+      </div>
+      <button id="themeBtn" class="btn" aria-label="Toggle theme">☾ night</button>
+      <button id="compileBtn" class="btn primary">Compile trail (0)</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="rail" class="card" aria-label="Trailhead">
+      <div class="railhead eyebrow">Trailhead — territories</div>
+      <div id="railList"></div>
+      <div id="trailBlock">
+        <div class="eyebrow">Your trail</div>
+        <div id="trailList"></div>
+      </div>
+    </section>
+
+    <section id="stageCol" aria-label="Track view">
+      <div id="hint">
+        <span class="hinttext"><b>Hover a connection</b> to read the line it came from&ensp;·&ensp;<b>click a concept</b> to walk to it&ensp;·&ensp;<b>drag the season line</b> to travel in time</span>
+        <button id="hintClose" aria-label="Dismiss hint">✕</button>
+      </div>
+      <div id="stageWrap" class="card">
+        <div class="legend">
+          <span class="eyebrow">Territories</span>
+          <span class="lg"><svg class="glyph ws1" viewBox="-12 -12 24 24"><circle cx="0" cy="0" r="7"/></svg>Scout Dev</span>
+          <span class="lg"><svg class="glyph ws2" viewBox="-12 -12 24 24"><rect x="-5.5" y="-5.5" width="11" height="11" rx="2" transform="rotate(45 0 0)"/></svg>Claude Code</span>
+          <span class="lg"><svg class="glyph ws3" viewBox="-12 -12 24 24"><polygon points="0,-7.8 6.8,-3.9 6.8,3.9 0,7.8 -6.8,3.9 -6.8,-3.9"/></svg>Voyager</span>
+        </div>
+        <svg id="stage" viewBox="0 0 920 600" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Radial concept neighborhood"></svg>
+        <div id="season">
+          <span class="eyebrow">Season</span>
+          <input id="scrub" type="range" aria-label="Season scrubber" />
+          <span id="seasonLabel"></span>
+          <button id="playBtn">▸ replay season</button>
+        </div>
+      </div>
+      <div id="listWrap" class="card" hidden>
+        <h2>Crossings at <span id="listCenter"></span></h2>
+        <div class="sub">The same neighborhood as the Track view, as a table. Hover a row to see its evidence; click a name to walk.</div>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Crossing</th><th>Concept</th><th>Territory</th><th>Evidence</th><th>Season</th><th>Quotation</th></tr></thead>
+            <tbody id="listBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="ground" class="card" aria-label="The Ground — source evidence">
+      <div id="quoteCard" hidden>
+        <p id="quoteText" class="serif"></p>
+        <span id="quoteCite" class="mono"></span>
+        <div id="quoteRel"></div>
+      </div>
+      <div id="groundHead">
+        <div id="groundCause"></div>
+        <div id="groundTitle"></div>
+        <div id="groundMeta"></div>
+      </div>
+      <div id="groundLines"></div>
+    </section>
+  </main>
+</div>
+
+<dialog id="compileDlg" aria-label="Compiled trail bundle">
+  <div class="dlghead"><h2>Trail bundle</h2><button id="closeDlg" class="btn">Close</button></div>
+  <div class="dlgbody">
+    <p class="note">Your walked path, compiled as a Markdown bundle — each step with its crossing quotation and line-level evidence. Paste it into any LLM chat.</p>
+    <textarea id="bundleText" readonly spellcheck="false"></textarea>
+  </div>
+  <div class="dlgfoot"><button id="copyBtn" class="btn primary">Copy bundle</button></div>
+</dialog>
+
+<script>window.SCOUT_DATA = /*__DATA__*/ null;</script>
+<script>
+/*__APP__*/
+</script>

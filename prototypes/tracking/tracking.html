@@ -1,0 +1,830 @@
+<title>Scout — Tracking</title>
+<style>
+  /* ============ Savanna tokens — day (light) ============ */
+  :root {
+    --bg: #F4EAD3;
+    --bg-rad1: rgba(79, 168, 86, 0.16);
+    --bg-rad2: rgba(232, 155, 92, 0.18);
+    --bg-rad3: rgba(91, 163, 212, 0.10);
+    --surface: #FFFDF7;
+    --panel: #FAF4E6;
+    --ink-bright: #1F1611;
+    --ink-body: #3A2D24;
+    --ink-muted: #7A6B58;
+    --ink-dim: #A8987F;
+    --line: #E8DDC2;
+    --line2: #D9CAA9;
+    --accent: #3D8A44;          /* bandana green — interactive */
+    --accent-wash: rgba(79, 168, 86, 0.14);
+    --gold: #B6753A;            /* leopard gold — evidence ink */
+    --gold-wash: rgba(232, 155, 92, 0.20);
+    --spoor: #E89B5C;
+    --mauve: #7A5C88;           /* category / relation pills */
+    --mauve-wash: rgba(155, 123, 168, 0.16);
+    --ws1: #35803F; --ws1t: #2C6B35;   /* scout-dev  (validated) */
+    --ws2: #E89B5C; --ws2t: #A05E22;   /* claude-code (validated) */
+    --ws3: #2E72A8; --ws3t: #275F8C;   /* voyager    (validated) */
+    --edge-ink: rgba(58, 45, 36, 0.42);
+    --btn-bg: #1F1611; --btn-fg: #FAF4E6;
+    --shadow: 0 4px 24px -8px rgba(58, 46, 32, 0.10), 0 2px 6px -2px rgba(58, 46, 32, 0.05);
+    color-scheme: light;
+  }
+  /* ============ Night tracking (dark) ============ */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #171210;
+      --bg-rad1: rgba(79, 168, 86, 0.10);
+      --bg-rad2: rgba(232, 155, 92, 0.08);
+      --bg-rad3: rgba(91, 163, 212, 0.06);
+      --surface: #221A15;
+      --panel: #2A2118;
+      --ink-bright: #F4EBDA;
+      --ink-body: #D8CCB4;
+      --ink-muted: #A99A82;
+      --ink-dim: #7E6F5C;
+      --line: #3C3122;
+      --line2: #4A3B2A;
+      --accent: #6FC07A;
+      --accent-wash: rgba(111, 192, 122, 0.14);
+      --gold: #E0A468;
+      --gold-wash: rgba(224, 164, 104, 0.16);
+      --spoor: #E0A468;
+      --mauve: #C9A9D6;
+      --mauve-wash: rgba(176, 143, 192, 0.20);
+      --ws1: #1F7845; --ws1t: #7CC98A;   /* validated (dark) */
+      --ws2: #CC803A; --ws2t: #E8A968;   /* validated (dark) */
+      --ws3: #3F8CCB; --ws3t: #7FB8E4;   /* validated (dark) */
+      --edge-ink: rgba(216, 204, 180, 0.38);
+      --btn-bg: #F4EBDA; --btn-fg: #221A15;
+      --shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.45), 0 2px 6px -2px rgba(0, 0, 0, 0.3);
+      color-scheme: dark;
+    }
+  }
+  /* viewer toggle wins in both directions */
+  :root[data-theme="light"] {
+    --bg: #F4EAD3; --bg-rad1: rgba(79,168,86,.16); --bg-rad2: rgba(232,155,92,.18); --bg-rad3: rgba(91,163,212,.10);
+    --surface: #FFFDF7; --panel: #FAF4E6;
+    --ink-bright: #1F1611; --ink-body: #3A2D24; --ink-muted: #7A6B58; --ink-dim: #A8987F;
+    --line: #E8DDC2; --line2: #D9CAA9;
+    --accent: #3D8A44; --accent-wash: rgba(79,168,86,.14);
+    --gold: #B6753A; --gold-wash: rgba(232,155,92,.20); --spoor: #E89B5C;
+    --mauve: #7A5C88; --mauve-wash: rgba(155,123,168,.16);
+    --ws1: #35803F; --ws1t: #2C6B35; --ws2: #E89B5C; --ws2t: #A05E22; --ws3: #2E72A8; --ws3t: #275F8C;
+    --edge-ink: rgba(58,45,36,.42); --btn-bg: #1F1611; --btn-fg: #FAF4E6;
+    --shadow: 0 4px 24px -8px rgba(58,46,32,.10), 0 2px 6px -2px rgba(58,46,32,.05);
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    --bg: #171210; --bg-rad1: rgba(79,168,86,.10); --bg-rad2: rgba(232,155,92,.08); --bg-rad3: rgba(91,163,212,.06);
+    --surface: #221A15; --panel: #2A2118;
+    --ink-bright: #F4EBDA; --ink-body: #D8CCB4; --ink-muted: #A99A82; --ink-dim: #7E6F5C;
+    --line: #3C3122; --line2: #4A3B2A;
+    --accent: #6FC07A; --accent-wash: rgba(111,192,122,.14);
+    --gold: #E0A468; --gold-wash: rgba(224,164,104,.16); --spoor: #E0A468;
+    --mauve: #C9A9D6; --mauve-wash: rgba(176,143,192,.20);
+    --ws1: #1F7845; --ws1t: #7CC98A; --ws2: #CC803A; --ws2t: #E8A968; --ws3: #3F8CCB; --ws3t: #7FB8E4;
+    --edge-ink: rgba(216,204,180,.38); --btn-bg: #F4EBDA; --btn-fg: #221A15;
+    --shadow: 0 4px 24px -8px rgba(0,0,0,.45), 0 2px 6px -2px rgba(0,0,0,.3);
+    color-scheme: dark;
+  }
+
+  /* ============ base ============ */
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink-body);
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(1100px 700px at 100% -5%, var(--bg-rad1), transparent 60%),
+      radial-gradient(900px 800px at -10% 110%, var(--bg-rad2), transparent 60%),
+      radial-gradient(700px 500px at 60% 120%, var(--bg-rad3), transparent 60%);
+    background-attachment: fixed;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  code, .mono { font-family: "JetBrains Mono", "SF Mono", Monaco, Consolas, "Liberation Mono", Menlo, monospace; }
+  .serif { font-family: Fraunces, "Cormorant Garamond", "Iowan Old Style", Georgia, "Times New Roman", serif; }
+  button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  .eyebrow { font-size: 10px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink-dim); font-weight: 700; }
+  .linklike { padding: 0; text-align: left; color: var(--ink-bright); }
+  .linklike:hover { color: var(--accent); }
+
+  /* ============ app frame ============ */
+  #app { height: 100dvh; display: grid; grid-template-rows: auto 1fr; gap: 12px; padding: 14px 16px 16px; }
+  header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .pawmark { width: 30px; height: 30px; color: var(--gold); flex: none; }
+  .brand h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink-bright); line-height: 1.1; }
+  .brand .tag { font-size: 11.5px; color: var(--ink-muted); margin-top: 1px; }
+  .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .seg { display: inline-flex; border: 1px solid var(--line2); border-radius: 999px; overflow: hidden; background: var(--surface); }
+  .seg button { padding: 5px 13px; font-size: 12px; font-weight: 600; color: var(--ink-muted); }
+  .seg button.on { background: var(--accent-wash); color: var(--accent); }
+  .btn { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line2); background: var(--surface);
+         border-radius: 999px; padding: 5px 13px; font-size: 12px; font-weight: 600; color: var(--ink-body); transition: border-color .15s, color .15s; }
+  .btn:hover { border-color: var(--accent); color: var(--ink-bright); }
+  .btn.primary { background: var(--btn-bg); color: var(--btn-fg); border-color: transparent; }
+  .btn.primary:hover { opacity: 0.9; }
+
+  main { display: grid; grid-template-columns: 234px minmax(0, 1fr) 348px; gap: 12px; min-height: 0; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
+
+  /* ============ trailhead rail ============ */
+  #rail { display: flex; flex-direction: column; min-height: 0; padding: 14px 0 10px; }
+  #rail .railhead { padding: 0 14px 8px; }
+  #railList { overflow-y: auto; min-height: 0; flex: 1; padding: 0 8px; }
+  .terr { margin-bottom: 12px; }
+  .terrname { padding: 6px 8px 4px; }
+  .citem { display: flex; align-items: center; gap: 8px; width: 100%; padding: 5px 8px; border-radius: 10px; font-size: 12.5px; color: var(--ink-body); }
+  .citem:hover { background: var(--panel); color: var(--ink-bright); }
+  .citem.on { background: var(--accent-wash); color: var(--ink-bright); font-weight: 700; }
+  .citem.unseen { opacity: 0.4; }
+  .glyph { width: 15px; height: 15px; flex: none; }
+  #trailBlock { border-top: 1px solid var(--line); margin-top: 6px; padding: 10px 14px 0; max-height: 38%; display: flex; flex-direction: column; }
+  #trailBlock .eyebrow { margin-bottom: 6px; }
+  #trailList { overflow-y: auto; min-height: 0; }
+  .trailempty { font-size: 11.5px; color: var(--ink-dim); font-style: italic; padding: 4px 0 8px; }
+  .tstep { display: flex; align-items: center; gap: 7px; padding: 3px 0; font-size: 12.5px; }
+  .paw { width: 13px; height: 13px; fill: var(--gold); flex: none; transform: rotate(-14deg); }
+  .paw.flip { transform: rotate(14deg); }
+  .tstep .via { font-size: 10px; color: var(--mauve); background: var(--mauve-wash); border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
+  .tstep .tdel { color: var(--ink-dim); font-size: 10px; margin-left: auto; padding: 2px 4px; }
+  .tstep .tdel:hover { color: var(--ink-bright); }
+
+  /* ============ stage ============ */
+  #stageCol { display: flex; flex-direction: column; min-width: 0; min-height: 0; gap: 10px; }
+  #hint { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ink-muted);
+          background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 7px 12px; }
+  #hint .hinttext { flex: 1; }
+  #hint b { color: var(--ink-body); font-weight: 600; }
+  #hintClose { margin-left: auto; color: var(--ink-dim); }
+  #stageWrap, #listWrap { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+  #stage { width: 100%; height: 100%; flex: 1; min-height: 0; display: block; }
+  .legend { display: flex; gap: 14px; align-items: center; padding: 8px 16px 2px; flex-wrap: wrap; }
+  .legend .eyebrow { margin-right: 2px; }
+  .lg { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-muted); }
+  .lg svg { width: 13px; height: 13px; }
+
+  /* svg marks */
+  .sector { font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; fill: var(--ink-dim); opacity: 0.75; font-weight: 700; }
+  .edge { fill: none; stroke: var(--edge-ink); transition: stroke .12s, stroke-width .12s; }
+  .edge.hover, .edge.stuck { stroke: var(--ink-bright); }
+  .edgehit { fill: none; stroke: transparent; stroke-width: 16; cursor: pointer; }
+  .spoor { fill: none; stroke: var(--spoor); stroke-width: 6; opacity: 0.30; stroke-linecap: round; }
+  .arrow { fill: var(--edge-ink); }
+  .node { cursor: pointer; }
+  .node .hit { fill: transparent; stroke: none !important; }
+  .node > :is(circle, rect, polygon):not(.hit) { stroke: var(--surface); stroke-width: 2.5; transition: transform .12s; }
+  .node:hover > :is(circle, rect, polygon):not(.hit) { stroke: var(--ink-bright); stroke-width: 2; }
+  .node.ws1 > :is(circle, rect, polygon):not(.hit) { fill: var(--ws1); }
+  .node.ws2 > :is(circle, rect, polygon):not(.hit) { fill: var(--ws2); }
+  .node.ws3 > :is(circle, rect, polygon):not(.hit) { fill: var(--ws3); }
+  .node.unseen { opacity: 0.35; }
+  .glyph.ws1 :is(circle, rect, polygon) { fill: var(--ws1); }
+  .glyph.ws2 :is(circle, rect, polygon) { fill: var(--ws2); }
+  .glyph.ws3 :is(circle, rect, polygon) { fill: var(--ws3); }
+  .nlabel { font-size: 11px; fill: var(--ink-body); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; font-weight: 600; }
+  .center > :is(circle, rect, polygon):not(.rosette) { stroke: var(--surface); stroke-width: 3; }
+  .center.ws1 > :is(circle, rect, polygon):not(.rosette) { fill: var(--ws1); }
+  .center.ws2 > :is(circle, rect, polygon):not(.rosette) { fill: var(--ws2); }
+  .center.ws3 > :is(circle, rect, polygon):not(.rosette) { fill: var(--ws3); }
+  .rosette { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 5 8; opacity: 0.75; }
+  .rosette.r2 { stroke-width: 1.5; stroke-dasharray: 3 10; opacity: 0.45; }
+  .center.ws1 .rosette { stroke: var(--ws1); }
+  .center.ws2 .rosette { stroke: var(--ws2); }
+  .center.ws3 .rosette { stroke: var(--ws3); }
+  .clabel { font-size: 14px; font-weight: 800; fill: var(--ink-bright); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; }
+  .csub { font-size: 10.5px; fill: var(--ink-muted); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+  .empty { font-size: 13px; fill: var(--ink-muted); font-style: italic; }
+
+  /* season scrubber */
+  #season { display: flex; align-items: center; gap: 12px; padding: 9px 16px 12px; border-top: 1px solid var(--line); }
+  #season .eyebrow { flex: none; }
+  #scrub { flex: 1; accent-color: var(--accent); min-width: 80px; }
+  #seasonLabel { font-size: 12px; font-weight: 700; color: var(--ink-bright); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  #playBtn { font-size: 11.5px; color: var(--ink-muted); border: 1px solid var(--line2); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+  #playBtn:hover { color: var(--ink-bright); border-color: var(--accent); }
+
+  /* list view */
+  #listWrap { padding: 14px 16px; overflow: auto; }
+  #listWrap h2 { margin: 0 0 4px; font-size: 15px; color: var(--ink-bright); }
+  #listWrap .sub { font-size: 11.5px; color: var(--ink-muted); margin-bottom: 10px; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-dim); font-weight: 700; padding: 6px 10px; border-bottom: 1px solid var(--line2); white-space: nowrap; }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tbody tr:hover { background: var(--panel); }
+  td code { font-size: 11px; color: var(--ink-muted); }
+  .qcell { font-family: Fraunces, "Cormorant Garamond", "Iowan Old Style", Georgia, serif; font-style: italic; color: var(--ink-muted); max-width: 340px; }
+  .emptycell { color: var(--ink-dim); font-style: italic; }
+  .reltype { font-size: 10px; color: var(--mauve); background: var(--mauve-wash); border-radius: 999px; padding: 1px 8px; white-space: nowrap; font-weight: 600; font-style: normal; }
+
+  /* ============ the ground (source pane) ============ */
+  #ground { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  #quoteCard { border-bottom: 1px solid var(--line); background: var(--panel); padding: 13px 16px 12px; }
+  #quoteCard.stuck { box-shadow: inset 3px 0 0 var(--gold); }
+  #quoteText { font-family: Fraunces, "Cormorant Garamond", "Iowan Old Style", Georgia, serif; font-style: italic;
+               font-size: 15px; line-height: 1.55; color: var(--ink-bright); margin: 0 0 8px; text-wrap: pretty; }
+  #quoteCite { font-family: "JetBrains Mono", "SF Mono", Monaco, Consolas, monospace; font-size: 10px; color: var(--gold); display: block; margin-bottom: 7px; }
+  #quoteRel { font-size: 11.5px; color: var(--ink-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .unstick { color: var(--ink-dim); font-size: 10px; padding: 1px 5px; border: 1px solid var(--line2); border-radius: 999px; }
+  #groundHead { padding: 12px 16px 9px; border-bottom: 1px solid var(--line); }
+  #groundCause { font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); font-weight: 700; margin-bottom: 3px; }
+  #groundTitle { font-size: 13.5px; font-weight: 700; color: var(--ink-bright); line-height: 1.3; margin-bottom: 4px; text-wrap: balance; }
+  #groundMeta { font-size: 10.5px; color: var(--ink-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  #groundMeta code { font-size: 10px; }
+  .chip { font-size: 10px; border-radius: 999px; padding: 1px 8px; font-weight: 700; }
+  .chip.ws1 { color: var(--ws1t); background: color-mix(in srgb, var(--ws1) 16%, transparent); }
+  .chip.ws2 { color: var(--ws2t); background: color-mix(in srgb, var(--ws2) 16%, transparent); }
+  .chip.ws3 { color: var(--ws3t); background: color-mix(in srgb, var(--ws3) 16%, transparent); }
+  #groundLines { overflow-y: auto; min-height: 0; flex: 1; padding: 8px 0 14px; }
+  .srcline { display: flex; gap: 10px; padding: 1px 16px 1px 13px; border-left: 3px solid transparent; }
+  .srcline .ln { font-family: "JetBrains Mono", "SF Mono", Monaco, Consolas, monospace; font-size: 10px; color: var(--ink-dim);
+                 min-width: 2em; text-align: right; padding-top: 2px; user-select: none; font-variant-numeric: tabular-nums; }
+  .srcline .lt { font-family: "JetBrains Mono", "SF Mono", Monaco, Consolas, monospace; font-size: 11.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+  .srcline.hot { background: var(--gold-wash); border-left-color: var(--gold); }
+  .srcline.hot .lt { color: var(--ink-bright); }
+
+  /* ============ compile dialog ============ */
+  dialog { border: 1px solid var(--line2); border-radius: 18px; background: var(--surface); color: var(--ink-body);
+           box-shadow: var(--shadow); padding: 0; width: min(680px, 92vw); }
+  dialog::backdrop { background: rgba(31, 22, 17, 0.4); }
+  .dlghead { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 10px; border-bottom: 1px solid var(--line); }
+  .dlghead h2 { margin: 0; font-size: 15px; color: var(--ink-bright); }
+  .dlgbody { padding: 12px 18px 16px; }
+  .dlgbody .note { font-size: 11.5px; color: var(--ink-muted); margin: 0 0 10px; }
+  #bundleText { width: 100%; height: 300px; resize: vertical; font-family: "JetBrains Mono", Monaco, Consolas, monospace;
+                font-size: 11px; line-height: 1.5; background: var(--panel); color: var(--ink-body);
+                border: 1px solid var(--line2); border-radius: 10px; padding: 10px; }
+  .dlgfoot { display: flex; justify-content: flex-end; gap: 8px; padding: 0 18px 16px; }
+
+  /* ============ responsive ============ */
+  @media (max-width: 1080px) {
+    #app { height: auto; }
+    main { grid-template-columns: 1fr; }
+    #stageCol { order: 1; } #ground { order: 2; max-height: 420px; } #rail { order: 3; max-height: 420px; }
+    #stage { min-height: 460px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+
+<div id="app">
+  <header>
+    <div class="brand">
+      <svg class="pawmark" viewBox="-10 -10 20 20" aria-hidden="true">
+        <g fill="currentColor"><ellipse cx="0" cy="3.6" rx="4.4" ry="3.4"/><circle cx="-4.6" cy="-1.6" r="2"/><circle cx="-1.6" cy="-3.8" r="2.1"/><circle cx="1.8" cy="-3.8" r="2.1"/><circle cx="4.7" cy="-1.6" r="2"/></g>
+      </svg>
+      <div>
+        <div class="eyebrow">Scout · prototype</div>
+        <h1>Tracking</h1>
+        <div class="tag">Follow a thought across your archive — every crossing carries its lines. Demo substrate.</div>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="View">
+        <button id="viewTrack" class="on">Track</button><button id="viewList">List</button>
+      </div>
+      <button id="themeBtn" class="btn" aria-label="Toggle theme">☾ night</button>
+      <button id="compileBtn" class="btn primary">Compile trail (0)</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="rail" class="card" aria-label="Trailhead">
+      <div class="railhead eyebrow">Trailhead — territories</div>
+      <div id="railList"></div>
+      <div id="trailBlock">
+        <div class="eyebrow">Your trail</div>
+        <div id="trailList"></div>
+      </div>
+    </section>
+
+    <section id="stageCol" aria-label="Track view">
+      <div id="hint">
+        <span class="hinttext"><b>Hover a connection</b> to read the line it came from&ensp;·&ensp;<b>click a concept</b> to walk to it&ensp;·&ensp;<b>drag the season line</b> to travel in time</span>
+        <button id="hintClose" aria-label="Dismiss hint">✕</button>
+      </div>
+      <div id="stageWrap" class="card">
+        <div class="legend">
+          <span class="eyebrow">Territories</span>
+          <span class="lg"><svg class="glyph ws1" viewBox="-12 -12 24 24"><circle cx="0" cy="0" r="7"/></svg>Scout Dev</span>
+          <span class="lg"><svg class="glyph ws2" viewBox="-12 -12 24 24"><rect x="-5.5" y="-5.5" width="11" height="11" rx="2" transform="rotate(45 0 0)"/></svg>Claude Code</span>
+          <span class="lg"><svg class="glyph ws3" viewBox="-12 -12 24 24"><polygon points="0,-7.8 6.8,-3.9 6.8,3.9 0,7.8 -6.8,3.9 -6.8,-3.9"/></svg>Voyager</span>
+        </div>
+        <svg id="stage" viewBox="0 0 920 600" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Radial concept neighborhood"></svg>
+        <div id="season">
+          <span class="eyebrow">Season</span>
+          <input id="scrub" type="range" aria-label="Season scrubber" />
+          <span id="seasonLabel"></span>
+          <button id="playBtn">▸ replay season</button>
+        </div>
+      </div>
+      <div id="listWrap" class="card" hidden>
+        <h2>Crossings at <span id="listCenter"></span></h2>
+        <div class="sub">The same neighborhood as the Track view, as a table. Hover a row to see its evidence; click a name to walk.</div>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Crossing</th><th>Concept</th><th>Territory</th><th>Evidence</th><th>Season</th><th>Quotation</th></tr></thead>
+            <tbody id="listBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="ground" class="card" aria-label="The Ground — source evidence">
+      <div id="quoteCard" hidden>
+        <p id="quoteText" class="serif"></p>
+        <span id="quoteCite" class="mono"></span>
+        <div id="quoteRel"></div>
+      </div>
+      <div id="groundHead">
+        <div id="groundCause"></div>
+        <div id="groundTitle"></div>
+        <div id="groundMeta"></div>
+      </div>
+      <div id="groundLines"></div>
+    </section>
+  </main>
+</div>
+
+<dialog id="compileDlg" aria-label="Compiled trail bundle">
+  <div class="dlghead"><h2>Trail bundle</h2><button id="closeDlg" class="btn">Close</button></div>
+  <div class="dlgbody">
+    <p class="note">Your walked path, compiled as a Markdown bundle — each step with its crossing quotation and line-level evidence. Paste it into any LLM chat.</p>
+    <textarea id="bundleText" readonly spellcheck="false"></textarea>
+  </div>
+  <div class="dlgfoot"><button id="copyBtn" class="btn primary">Copy bundle</button></div>
+</dialog>
+
+<script>window.SCOUT_DATA = {"meta":{"title":"Scout — Tracking","generated_by":"tracking-prototype v0 (demo substrate)","time_min":"2026-05-01","time_max":"2026-07-31"},"workspaces":[{"id":"scout-dev","name":"Scout Dev","color":"ws1"},{"id":"claude-code","name":"Claude Code","color":"ws2"},{"id":"voyager","name":"Voyager","color":"ws3"}],"sources":{"scout-design-notes":{"file_id":"scout-design-notes","title":"Scout design notes — substrate and provenance","workspace":"scout-dev","date":"2026-05-12","path":"sources/scout-dev/2026-05-12-design-notes.md","lines":["# Scout design notes — substrate and provenance","","**Date:** 2026-05-12 · **Workspace:** scout-dev","","## Why line-level provenance","","Most memory tools give you a chatbot that remembers things, but you cannot","see where those memories come from or check whether they are right.","Scout works differently: every claim traces back to the exact line in the","exact file it came from, so trust is checkable instead of assumed.","Line-level provenance is the property everything else in Scout depends on.","","## The substrate","","Workspaces, sources, concepts, and segments live in plain JSON files on","disk; the reader only reads them. Nothing is invented, nothing is hidden.","The reader stays deterministic because no model runs at read time —","the same substrate always renders the same page, offline, forever.","A deterministic reader is what makes the memory auditable rather than","merely retrievable.","","## Workspaces as territories","","Each workspace is a territory with its own color: scout-dev, voyager,","claude-code. Concepts can cross territories, and those crossings are","often where the interesting connections live.","","## The Library Card","","Pin what matters to your Library Card, compile a Markdown bundle, and","paste it into your next AI conversation so it has your full context.","A compiled bundle inlines each segment's actual lines, so the context","you hand to a model carries its own receipts.","The bundle is the harvest; the archive is the field."]},"voyager-field-notes":{"file_id":"voyager-field-notes","title":"Voyager field notes — memory you can check","workspace":"voyager","date":"2026-06-15","path":"sources/voyager/2026-06-15-field-notes.md","lines":["# Voyager field notes — memory you can check","","**Date:** 2026-06-15 · **Workspace:** voyager","","## Episode sketch: trustworthy memory","","A memory system earns trust when every remembered claim can be opened","and read in its original context, line by line.","Provenance is not a feature of memory; it is what makes memory","trustworthy at all — the receipt is the memory.","","## The trail idea","","In 1945 Vannevar Bush imagined the memex: associative trails through a","personal archive, saved, revisited, and handed to someone else.","Eighty years later every tool has links and none has trails.","A trail is memory with a narrative: the order you walked through your","own thinking is itself part of what you know.","The memex trail is the missing interface for personal knowledge."]},"graph-session":{"file_id":"graph-session","title":"Graph session — mapping Scout to graph architectures","workspace":"claude-code","date":"2026-07-18","path":"sources/claude-code/2026-07-18-graph-session.md","lines":["# Graph session — mapping Scout to graph architectures","","**Date:** 2026-07-18 · **Workspace:** claude-code","","## The finding","","Scout's substrate already defines a knowledge graph: concepts as nodes","and typed edges in concept-graph.json — but nothing builds it yet.","The concept graph is structurally a GraphRAG index with the","extraction step missing.","","## GraphRAG, mapped","","GraphRAG splits the work: a model extracts entities and relations at","index time, and query time is pure graph traversal.","That split matches Scout exactly — AI at ingest, deterministic at read.","GraphRAG depends on line-level provenance to become checkable: an edge","that cites its lines can be verified by a machine, not just believed.","","## Building the graph","","Co-occurrence is the deterministic baseline: concepts that share","evidence segments are related, no model required.","Co-occurrence evolved into full GraphRAG extraction once","evidence-verification could kill hallucinated edges on arrival.","Entity resolution is the quiet boss fight: \"Scout\", \"the reader\", and","\"scout-reader\" must resolve to one node or the graph fragments.","Entity-resolution failures are the main influence behind the hairball","problem — duplicate nodes multiply edges until structure drowns.","","## Bundles get graph-aware","","A pinned concept should arrive with its neighborhood: bundle compilation","expands one hop along the concept graph and carries the evidence lines","for every crossing it includes.","The graph turns the Library Card from a list into a map."]},"tracking-sketch":{"file_id":"tracking-sketch","title":"Tracking — an interface for walking the graph","workspace":"claude-code","date":"2026-07-18","path":"sources/claude-code/2026-07-18-tracking-sketch.md","lines":["# Tracking — an interface for walking the graph","","**Date:** 2026-07-18 · **Workspace:** claude-code","","## Against the hairball","","The default graph interface is a force-directed hairball: it demos","well and is used never, because a thousand floating nodes answer no","real question.","The hairball problem contrasts with tracking: you never survey the","whole territory at once, you follow one trail at a time.","","## Edges are quotations","","An edge should not be a line labeled related-to; it should be the","verbatim sentence where two ideas touched, with its date and source.","Edges-as-quotations only works because line-level provenance can","resolve every crossing to the exact lines that evidence it.","Hover a connection and you are reading your own words; the graph is","made of the text, not floating above it.","","## Time is a scrubber","","Drag the season line and the neighborhood re-forms as of that date;","edges exist only once their evidence exists.","The temporal scrubber turns \"when did I change my mind\" from a","question into a scene you can watch.","","## The trail is the artifact","","Tracking records every crossing as a trail of paw prints, and the","trail compiles straight into a bundle: exploration and harvest are","the same motion.","The tracking interface is an instance of the memex trail, eighty","years late and finally walkable."]}},"segments":[{"segment_id":"sdn-s001","file_id":"scout-design-notes","start_line":5,"end_line":11,"title":"Why line-level provenance"},{"segment_id":"sdn-s002","file_id":"scout-design-notes","start_line":13,"end_line":20,"title":"The substrate"},{"segment_id":"sdn-s003","file_id":"scout-design-notes","start_line":22,"end_line":34,"title":"Territories and the Library Card"},{"segment_id":"voy-s001","file_id":"voyager-field-notes","start_line":5,"end_line":10,"title":"Trustworthy memory"},{"segment_id":"voy-s002","file_id":"voyager-field-notes","start_line":12,"end_line":19,"title":"The trail idea"},{"segment_id":"gs-s001","file_id":"graph-session","start_line":5,"end_line":10,"title":"The finding"},{"segment_id":"gs-s002","file_id":"graph-session","start_line":12,"end_line":18,"title":"GraphRAG, mapped"},{"segment_id":"gs-s003","file_id":"graph-session","start_line":20,"end_line":29,"title":"Building the graph"},{"segment_id":"gs-s004","file_id":"graph-session","start_line":31,"end_line":36,"title":"Bundles get graph-aware"},{"segment_id":"ts-s001","file_id":"tracking-sketch","start_line":5,"end_line":11,"title":"Against the hairball"},{"segment_id":"ts-s002","file_id":"tracking-sketch","start_line":13,"end_line":20,"title":"Edges are quotations"},{"segment_id":"ts-s003","file_id":"tracking-sketch","start_line":22,"end_line":27,"title":"Time is a scrubber"},{"segment_id":"ts-s004","file_id":"tracking-sketch","start_line":29,"end_line":35,"title":"The trail is the artifact"}],"concepts":[{"concept_id":"line-level-provenance","name":"Line-level provenance","category":"architecture","workspace":"scout-dev","summary":"Every claim traces to the exact line in the exact file it came from. The property everything else depends on.","source_segments":["sdn-s001"]},{"concept_id":"deterministic-reader","name":"Deterministic reader","category":"architecture","workspace":"scout-dev","summary":"No model runs at read time: the same substrate always renders the same page, offline, forever.","source_segments":["sdn-s002"]},{"concept_id":"workspaces","name":"Workspaces as territories","category":"structure","workspace":"scout-dev","summary":"Each workspace is a colored territory; cross-territory connections are where the interesting edges live.","source_segments":["sdn-s003"]},{"concept_id":"library-card-bundles","name":"Library Card & bundles","category":"feature","workspace":"scout-dev","summary":"Pin what matters, compile a Markdown bundle with inlined lines, paste it into your next AI conversation.","source_segments":["sdn-s003","gs-s004"]},{"concept_id":"trustworthy-memory","name":"Trustworthy memory","category":"idea","workspace":"voyager","summary":"Memory earns trust when every remembered claim can be opened and read in its original context.","source_segments":["voy-s001"]},{"concept_id":"memex-trails","name":"Memex trails","category":"idea","workspace":"voyager","summary":"Bush, 1945: associative trails through a personal archive — saved, revisited, handed to someone else.","source_segments":["voy-s002"]},{"concept_id":"concept-graph","name":"Concept graph","category":"architecture","workspace":"claude-code","summary":"concept-graph.json: typed edges between concepts. Defined in the substrate, waiting to be built.","source_segments":["gs-s001"]},{"concept_id":"graphrag","name":"GraphRAG","category":"method","workspace":"claude-code","summary":"Extract entities and relations at index time; answer at query time by pure graph traversal.","source_segments":["gs-s002"]},{"concept_id":"co-occurrence","name":"Co-occurrence edges","category":"method","workspace":"claude-code","summary":"The deterministic baseline: concepts that share evidence segments are related. No model required.","source_segments":["gs-s003"]},{"concept_id":"evidence-verification","name":"Evidence verification","category":"method","workspace":"claude-code","summary":"An edge survives only if its quoted evidence actually appears at the lines it cites.","source_segments":["gs-s003"]},{"concept_id":"entity-resolution","name":"Entity resolution","category":"method","workspace":"claude-code","summary":"The quiet boss fight: many surface names, one node — or the graph fragments.","source_segments":["gs-s003"]},{"concept_id":"hairball-problem","name":"The hairball problem","category":"risk","workspace":"claude-code","summary":"Force-directed everything-at-once: demos well, used never. A graph you look at instead of walk.","source_segments":["ts-s001"]},{"concept_id":"tracking-interface","name":"Tracking interface","category":"interface","workspace":"claude-code","summary":"Follow one trail at a time, on the ground, reading the prints. This prototype.","source_segments":["ts-s001","ts-s004"]},{"concept_id":"edges-as-quotations","name":"Edges as quotations","category":"interface","workspace":"claude-code","summary":"An edge is the verbatim sentence where two ideas touched — with date, source, and lines.","source_segments":["ts-s002"]},{"concept_id":"temporal-scrubber","name":"Temporal scrubber","category":"interface","workspace":"claude-code","summary":"Drag the season line; the neighborhood re-forms as of that date. Change of mind becomes a scene.","source_segments":["ts-s003"]}],"edges":[{"from":"graphrag","to":"line-level-provenance","type":"depends_on","evidence":{"file":"graph-session","from":17,"to":18},"date":"2026-07-18"},{"from":"trustworthy-memory","to":"line-level-provenance","type":"depends_on","evidence":{"file":"voyager-field-notes","from":9,"to":10},"date":"2026-06-15"},{"from":"deterministic-reader","to":"trustworthy-memory","type":"influences","evidence":{"file":"scout-design-notes","from":19,"to":20},"date":"2026-05-12"},{"from":"library-card-bundles","to":"line-level-provenance","type":"depends_on","evidence":{"file":"scout-design-notes","from":32,"to":33},"date":"2026-05-12"},{"from":"concept-graph","to":"graphrag","type":"instance_of","evidence":{"file":"graph-session","from":9,"to":10},"date":"2026-07-18"},{"from":"graphrag","to":"deterministic-reader","type":"co_occurs","evidence":{"file":"graph-session","from":16,"to":16},"date":"2026-07-18"},{"from":"co-occurrence","to":"graphrag","type":"evolved_into","evidence":{"file":"graph-session","from":24,"to":25},"date":"2026-07-18"},{"from":"evidence-verification","to":"graphrag","type":"influences","evidence":{"file":"graph-session","from":24,"to":25},"date":"2026-07-18"},{"from":"entity-resolution","to":"hairball-problem","type":"influences","evidence":{"file":"graph-session","from":28,"to":29},"date":"2026-07-18"},{"from":"hairball-problem","to":"tracking-interface","type":"contrasts_with","evidence":{"file":"tracking-sketch","from":10,"to":11},"date":"2026-07-18"},{"from":"edges-as-quotations","to":"line-level-provenance","type":"depends_on","evidence":{"file":"tracking-sketch","from":17,"to":18},"date":"2026-07-18"},{"from":"tracking-interface","to":"edges-as-quotations","type":"depends_on","evidence":{"file":"tracking-sketch","from":15,"to":18},"date":"2026-07-18"},{"from":"temporal-scrubber","to":"tracking-interface","type":"co_occurs","evidence":{"file":"tracking-sketch","from":24,"to":25},"date":"2026-07-18"},{"from":"tracking-interface","to":"memex-trails","type":"instance_of","evidence":{"file":"tracking-sketch","from":34,"to":35},"date":"2026-07-18"},{"from":"tracking-interface","to":"library-card-bundles","type":"influences","evidence":{"file":"tracking-sketch","from":31,"to":33},"date":"2026-07-18"},{"from":"library-card-bundles","to":"concept-graph","type":"depends_on","evidence":{"file":"graph-session","from":33,"to":35},"date":"2026-07-18"}],"territories":[{"id":"provenance","name":"Provenance & trust","concepts":["line-level-provenance","deterministic-reader","trustworthy-memory","evidence-verification"]},{"id":"building","name":"Building the graph","concepts":["concept-graph","graphrag","co-occurrence","entity-resolution","hairball-problem","workspaces"]},{"id":"walking","name":"Walking & harvest","concepts":["tracking-interface","edges-as-quotations","temporal-scrubber","memex-trails","library-card-bundles"]}]};</script>
+<script>
+/* Scout Tracking prototype — app logic.
+   Expects window.SCOUT_DATA. Deterministic: same substrate, same scene. */
+(function () {
+  "use strict";
+  const DATA = window.SCOUT_DATA;
+  const $ = (s, r) => (r || document).querySelector(s);
+  const SVGNS = "http://www.w3.org/2000/svg";
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---- indexes ----
+  const conceptById = new Map(DATA.concepts.map((c) => [c.concept_id, c]));
+  const segById = new Map(DATA.segments.map((s) => [s.segment_id, s]));
+  const wsById = new Map(DATA.workspaces.map((w) => [w.id, w]));
+  const terrByConcept = new Map();
+  DATA.territories.forEach((t) => t.concepts.forEach((c) => terrByConcept.set(c, t)));
+
+  const DAY = 86400000;
+  const parseD = (s) => Date.parse(s + "T00:00:00Z");
+  const fmtD = (ms) =>
+    new Date(ms).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  const T_MIN = parseD(DATA.meta.time_min), T_MAX = parseD(DATA.meta.time_max);
+
+  const firstSeen = (cid) => {
+    const c = conceptById.get(cid);
+    let m = Infinity;
+    for (const sg of c.source_segments) {
+      const seg = segById.get(sg);
+      const d = parseD(DATA.sources[seg.file_id].date);
+      if (d < m) m = d;
+    }
+    return m;
+  };
+
+  const quoteOf = (e) => {
+    const src = DATA.sources[e.evidence.file];
+    return src.lines.slice(e.evidence.from - 1, e.evidence.to).join(" ").replace(/\s+/g, " ").trim();
+  };
+  const citeOf = (e) => {
+    const src = DATA.sources[e.evidence.file];
+    return `${src.file_id} · L${e.evidence.from}–L${e.evidence.to} · ${e.date}`;
+  };
+
+  // ---- relation grammar: sector bands (deg, 0=east, clockwise) ----
+  const TYPES = {
+    depends_on:     { label: "depends on",     mid: -90,  span: 52, arrow: true,  dash: null },
+    influences:     { label: "influences",     mid: -145, span: 40, arrow: true,  dash: null },
+    contrasts_with: { label: "contrasts with", mid: 180,  span: 40, arrow: false, dash: "7 5" },
+    instance_of:    { label: "instance of",    mid: 135,  span: 36, arrow: true,  dash: "2 5" },
+    co_occurs:      { label: "co-occurs",      mid: 90,   span: 44, arrow: false, dash: null },
+    evolved_into:   { label: "evolved into",   mid: 0,    span: 44, arrow: true,  dash: null },
+  };
+
+  // ---- state ----
+  const state = {
+    center: "line-level-provenance",
+    t: T_MAX,
+    view: "track",
+    trail: [],
+    sticky: null, // pinned edge
+    playTimer: null,
+  };
+
+  // hash: #c=<id>&t=<yyyy-mm-dd>&v=track|list
+  (function readHash() {
+    const h = new URLSearchParams(location.hash.slice(1));
+    if (h.get("c") && conceptById.has(h.get("c"))) state.center = h.get("c");
+    if (h.get("t") && !isNaN(parseD(h.get("t")))) state.t = Math.min(T_MAX, Math.max(T_MIN, parseD(h.get("t"))));
+    if (h.get("v") === "list") state.view = "list";
+  })();
+  const writeHash = () => {
+    const iso = new Date(state.t).toISOString().slice(0, 10);
+    history.replaceState(null, "", `#c=${state.center}&t=${iso}&v=${state.view}`);
+  };
+
+  // ---- graph queries ----
+  const edgesAt = (t) => DATA.edges.filter((e) => parseD(e.date) <= t);
+  const neighborsOf = (cid, t) => {
+    const out = [];
+    for (const e of edgesAt(t)) {
+      if (e.from === cid) out.push({ edge: e, other: e.to, outgoing: true });
+      else if (e.to === cid) out.push({ edge: e, other: e.from, outgoing: false });
+    }
+    return out;
+  };
+  const weightOf = (e) => e.evidence.to - e.evidence.from + 1;
+
+  // ---- trail ----
+  function pushTrail(cid, via) {
+    const last = state.trail[state.trail.length - 1];
+    if (last && last.concept === cid) return;
+    state.trail.push({ concept: cid, via: via || null });
+    renderTrail();
+    $("#compileBtn").textContent = `Compile trail (${state.trail.length})`;
+  }
+
+  function walk(cid, via) {
+    if (!conceptById.has(cid)) return;
+    state.center = cid;
+    state.sticky = null;
+    pushTrail(cid, via);
+    const c = conceptById.get(cid);
+    const seg = segById.get(c.source_segments[0]);
+    showGround(seg.file_id, seg.start_line, seg.end_line, `Primary evidence — “${seg.title}”`);
+    clearQuote();
+    renderAll();
+  }
+
+  // ---- ground pane (source window) ----
+  function showGround(fileId, from, to, cause) {
+    const src = DATA.sources[fileId];
+    const ws = wsById.get(src.workspace);
+    $("#groundCause").textContent = cause || "";
+    $("#groundTitle").textContent = src.title;
+    $("#groundMeta").innerHTML =
+      `<span class="chip ${ws.color}">${esc(ws.name)}</span> <code>${esc(src.path)}</code> · ${esc(src.date)}`;
+    const lo = Math.max(1, from - 6), hi = Math.min(src.lines.length, to + 6);
+    let html = "";
+    for (let n = lo; n <= hi; n++) {
+      const hot = n >= from && n <= to;
+      html += `<div class="srcline${hot ? " hot" : ""}"><span class="ln">${n}</span><span class="lt">${esc(src.lines[n - 1]) || "&nbsp;"}</span></div>`;
+    }
+    $("#groundLines").innerHTML = html;
+    const first = $("#groundLines .hot");
+    if (first) first.scrollIntoView({ block: "center", behavior: reduceMotion ? "auto" : "smooth" });
+  }
+
+  // ---- quotation card ----
+  function showQuote(e, stick) {
+    const card = $("#quoteCard");
+    const from = conceptById.get(e.from), to = conceptById.get(e.to);
+    card.hidden = false;
+    card.classList.toggle("stuck", !!stick);
+    $("#quoteText").textContent = "“" + quoteOf(e) + "”";
+    $("#quoteCite").textContent = citeOf(e);
+    $("#quoteRel").innerHTML =
+      `${esc(from.name)} <span class="reltype">${TYPES[e.type].label}</span> ${esc(to.name)}` +
+      (stick ? ` <button class="unstick" id="unstickBtn" title="Unpin">✕</button>` : "");
+    if (stick) $("#unstickBtn").addEventListener("click", () => { state.sticky = null; clearQuote(); renderStage(); });
+    showGround(e.evidence.file, e.evidence.from, e.evidence.to, "Crossing evidence");
+  }
+  function clearQuote() {
+    if (state.sticky) return;
+    const card = $("#quoteCard");
+    card.hidden = true; card.classList.remove("stuck");
+  }
+
+  // ---- stage (radial track view) ----
+  const CX = 460, CY = 292;
+  function layoutNeighbors(nbrs) {
+    const groups = {};
+    nbrs.forEach((n) => { (groups[n.edge.type] = groups[n.edge.type] || []).push(n); });
+    const placed = [];
+    for (const [type, list] of Object.entries(groups)) {
+      const t = TYPES[type];
+      list.sort((a, b) => a.other.localeCompare(b.other));
+      const n = list.length;
+      list.forEach((item, i) => {
+        const frac = n === 1 ? 0.5 : i / (n - 1);
+        const ang = ((t.mid - t.span / 2) + frac * t.span) * Math.PI / 180;
+        const r = 236 - Math.min(weightOf(item.edge), 5) * 16 + (i % 2 ? 16 : 0);
+        placed.push({ ...item, x: CX + r * Math.cos(ang), y: CY + r * Math.sin(ang) });
+      });
+    }
+    return placed;
+  }
+
+  function nodeShape(ws, x, y, r) {
+    // Secondary encoding: shape per workspace (never color alone).
+    if (ws === "claude-code") {
+      const s = r * 1.5;
+      return `<rect x="${x - s / 2}" y="${y - s / 2}" width="${s}" height="${s}" rx="2.5" transform="rotate(45 ${x} ${y})"/>`;
+    }
+    if (ws === "voyager") {
+      const pts = [];
+      for (let k = 0; k < 6; k++) {
+        const a = (Math.PI / 3) * k - Math.PI / 2;
+        pts.push(`${(x + r * 1.12 * Math.cos(a)).toFixed(1)},${(y + r * 1.12 * Math.sin(a)).toFixed(1)}`);
+      }
+      return `<polygon points="${pts.join(" ")}"/>`;
+    }
+    return `<circle cx="${x}" cy="${y}" r="${r}"/>`;
+  }
+
+  function renderStage() {
+    const svg = $("#stage");
+    const center = conceptById.get(state.center);
+    const nbrs = layoutNeighbors(neighborsOf(state.center, state.t));
+    const freshCut = state.t - 45 * DAY;
+    let g = `<defs>`;
+    for (const w of DATA.workspaces)
+      g += `<marker id="arr-${w.id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" class="arrow"/></marker>`;
+    g += `<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" class="arrow"/></marker></defs>`;
+
+    // sector ghost labels — teach the grammar
+    for (const [k, t] of Object.entries(TYPES)) {
+      const a = (t.mid * Math.PI) / 180, rr = 272;
+      const x = CX + rr * Math.cos(a), y = CY + rr * Math.sin(a);
+      g += `<text class="sector" x="${x}" y="${y}" text-anchor="middle">${t.label}</text>`;
+    }
+
+    // edges under nodes
+    for (const n of nbrs) {
+      const e = n.edge, t = TYPES[e.type];
+      let sx = n.outgoing ? CX : n.x, sy = n.outgoing ? CY : n.y;
+      let tx = n.outgoing ? n.x : CX, ty = n.outgoing ? n.y : CY;
+      const dx = tx - sx, dy = ty - sy, len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len, uy = dy / len;
+      // stop short of the marks: edges meet node rims, arrows stay visible,
+      // and hit-paths never steal clicks from the nodes themselves
+      const srcOff = n.outgoing ? 26 : 15, dstOff = n.outgoing ? 15 : 28;
+      sx += ux * srcOff; sy += uy * srcOff; tx -= ux * dstOff; ty -= uy * dstOff;
+      const mx = (sx + tx) / 2, my = (sy + ty) / 2;
+      const cxq = mx - uy * 14, cyq = my + ux * 14;
+      const d = `M${sx},${sy} Q${cxq},${cyq} ${tx},${ty}`;
+      const w = 1.4 + Math.min(weightOf(e), 4) * 0.55;
+      const fresh = parseD(e.date) >= freshCut;
+      const key = edgeKey(e);
+      const stuck = state.sticky && edgeKey(state.sticky) === key;
+      if (fresh) g += `<path class="spoor" d="${d}"/>`;
+      g += `<path class="edge${stuck ? " stuck" : ""}" data-ek="${key}" d="${d}" stroke-width="${w}"` +
+        (t.dash ? ` stroke-dasharray="${t.dash}"` : "") +
+        (t.arrow ? ` marker-end="url(#arr)"` : "") + `/>`;
+      g += `<path class="edgehit" data-ek="${key}" d="${d}"/>`;
+    }
+
+    // neighbor nodes
+    for (const n of nbrs) {
+      const c = conceptById.get(n.other);
+      const seen = firstSeen(n.other) <= state.t;
+      g += `<g class="node ${wsById.get(c.workspace).color}${seen ? "" : " unseen"}" data-c="${c.concept_id}" data-ek="${edgeKey(n.edge)}" tabindex="0" role="button" aria-label="Walk to ${esc(c.name)}">` +
+        `<circle class="hit" cx="${n.x}" cy="${n.y}" r="20"/>` +
+        nodeShape(c.workspace, n.x, n.y, 9) +
+        `<text class="nlabel" x="${n.x}" y="${n.y + 24}" text-anchor="middle">${esc(c.name)}</text></g>`;
+    }
+
+    // center node + rosette ring (broken ring — rosettes, not solid spots)
+    const cn = nbrs.length;
+    g += `<g class="center ${wsById.get(center.workspace).color}">` +
+      `<circle class="rosette" cx="${CX}" cy="${CY}" r="21"/>` +
+      `<circle class="rosette r2" cx="${CX}" cy="${CY}" r="27"/>` +
+      nodeShape(center.workspace, CX, CY, 13) +
+      `<text class="clabel" x="${CX}" y="${CY + 48}" text-anchor="middle">${esc(center.name)}</text>` +
+      `<text class="csub" x="${CX}" y="${CY + 64}" text-anchor="middle">${cn} crossing${cn === 1 ? "" : "s"} · ${esc(center.category)}</text></g>`;
+
+    if (!cn)
+      g += `<text class="empty" x="${CX}" y="${CY - 46}" text-anchor="middle">No tracks yet this early — drag the season line forward.</text>`;
+
+    svg.innerHTML = g;
+
+    // wire events
+    svg.querySelectorAll(".edgehit").forEach((p) => {
+      const e = edgeByKey(p.dataset.ek);
+      p.addEventListener("mouseenter", () => { if (!state.sticky) showQuote(e, false); hi(p.dataset.ek, true); });
+      p.addEventListener("mouseleave", () => { if (!state.sticky) clearQuote(); hi(p.dataset.ek, false); });
+      p.addEventListener("click", () => { state.sticky = e; showQuote(e, true); renderStage(); });
+    });
+    svg.querySelectorAll(".node").forEach((nd) => {
+      const cid = nd.dataset.c, ek = nd.dataset.ek;
+      nd.addEventListener("mouseenter", () => { if (!state.sticky) showQuote(edgeByKey(ek), false); hi(ek, true); });
+      nd.addEventListener("mouseleave", () => { if (!state.sticky) clearQuote(); hi(ek, false); });
+      nd.addEventListener("click", () => walk(cid, edgeByKey(ek)));
+      nd.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); walk(cid, edgeByKey(ek)); } });
+    });
+    function hi(key, on) {
+      svg.querySelectorAll(`.edge[data-ek="${key}"]`).forEach((el) => el.classList.toggle("hover", on));
+    }
+  }
+  const edgeKey = (e) => `${e.from}|${e.type}|${e.to}`;
+  const edgeByKey = (k) => { const [f, t, o] = k.split("|"); return DATA.edges.find((e) => e.from === f && e.type === t && e.to === o); };
+
+  // ---- list view (table — the accessible twin of the stage) ----
+  function renderList() {
+    const nbrs = neighborsOf(state.center, state.t);
+    const rows = nbrs.map((n) => {
+      const c = conceptById.get(n.other), e = n.edge, ws = wsById.get(c.workspace);
+      const q = quoteOf(e);
+      return `<tr data-c="${c.concept_id}" data-ek="${edgeKey(e)}">` +
+        `<td><span class="reltype">${TYPES[e.type].label}</span>${n.outgoing ? " →" : " ←"}</td>` +
+        `<td><button class="linklike walkbtn">${esc(c.name)}</button></td>` +
+        `<td><span class="chip ${ws.color}">${esc(ws.name)}</span></td>` +
+        `<td><code>${esc(e.evidence.file)} L${e.evidence.from}–${e.evidence.to}</code></td>` +
+        `<td>${esc(e.date)}</td>` +
+        `<td class="qcell">“${esc(q.length > 90 ? q.slice(0, 90) + "…" : q)}”</td></tr>`;
+    }).join("");
+    $("#listBody").innerHTML = rows ||
+      `<tr><td colspan="6" class="emptycell">No tracks yet this early — drag the season line forward.</td></tr>`;
+    $("#listBody").querySelectorAll("tr[data-ek]").forEach((tr) => {
+      const e = edgeByKey(tr.dataset.ek);
+      tr.addEventListener("mouseenter", () => { if (!state.sticky) showQuote(e, false); });
+      tr.addEventListener("mouseleave", () => { if (!state.sticky) clearQuote(); });
+      tr.querySelector(".walkbtn").addEventListener("click", () => walk(tr.dataset.c, e));
+    });
+    $("#listCenter").textContent = conceptById.get(state.center).name;
+  }
+
+  // ---- trailhead rail ----
+  function renderRail() {
+    let html = "";
+    for (const t of DATA.territories) {
+      html += `<div class="terr"><div class="terrname eyebrow">${esc(t.name)}</div>`;
+      for (const cid of t.concepts) {
+        const c = conceptById.get(cid);
+        const ws = wsById.get(c.workspace);
+        const seen = firstSeen(cid) <= state.t;
+        html += `<button class="citem${cid === state.center ? " on" : ""}${seen ? "" : " unseen"}" data-c="${cid}">` +
+          `<svg class="glyph ${ws.color}" viewBox="-12 -12 24 24" aria-hidden="true">${nodeShape(c.workspace, 0, 0, 7)}</svg>` +
+          `<span>${esc(c.name)}</span></button>`;
+      }
+      html += `</div>`;
+    }
+    $("#railList").innerHTML = html;
+    $("#railList").querySelectorAll(".citem").forEach((b) =>
+      b.addEventListener("click", () => walk(b.dataset.c, null)));
+  }
+
+  function renderTrail() {
+    const wrap = $("#trailList");
+    if (!state.trail.length) { wrap.innerHTML = `<div class="trailempty">Walk the graph and your path collects here.</div>`; return; }
+    wrap.innerHTML = state.trail.map((s, i) => {
+      const c = conceptById.get(s.concept);
+      const via = s.via ? `<span class="via">${TYPES[s.via.type].label}</span>` : "";
+      return `<div class="tstep" data-i="${i}">` +
+        `<svg class="paw${i % 2 ? " flip" : ""}" viewBox="-8 -8 16 16" aria-hidden="true">` +
+        `<ellipse cx="0" cy="3.1" rx="3.4" ry="2.7"/><circle cx="-3.6" cy="-1.2" r="1.55"/><circle cx="-1.25" cy="-2.9" r="1.65"/><circle cx="1.35" cy="-2.9" r="1.65"/><circle cx="3.6" cy="-1.2" r="1.55"/></svg>` +
+        `<button class="linklike tgo">${esc(c.name)}</button>${via}` +
+        `<button class="tdel" title="Remove step" aria-label="Remove step">✕</button></div>`;
+    }).join("");
+    wrap.querySelectorAll(".tstep").forEach((el) => {
+      const i = +el.dataset.i;
+      el.querySelector(".tgo").addEventListener("click", () => walk(state.trail[i].concept, null));
+      el.querySelector(".tdel").addEventListener("click", () => {
+        state.trail.splice(i, 1); renderTrail();
+        $("#compileBtn").textContent = `Compile trail (${state.trail.length})`;
+      });
+    });
+  }
+
+  // ---- compile trail → markdown bundle ----
+  function compileTrail() {
+    const now = new Date().toISOString();
+    const L = [];
+    L.push("---");
+    L.push(`title: "Trail bundle — ${now.slice(0, 10)}"`);
+    L.push("schema: trail-bundle-v0");
+    L.push(`compiled: ${now}`);
+    L.push(`steps: ${state.trail.length}`);
+    L.push("substrate: tracking-prototype demo");
+    L.push("---", "");
+    const names = state.trail.map((s) => conceptById.get(s.concept).name);
+    L.push(`# Trail — ${names[0]}${names.length > 1 ? " → " + names[names.length - 1] : ""}`, "");
+    L.push("> A walked path through the concept graph. Every crossing below carries");
+    L.push("> the exact lines that evidence it. Paste into any LLM chat for context.", "");
+    state.trail.forEach((s, i) => {
+      const c = conceptById.get(s.concept);
+      L.push(`## ${i + 1}. ${c.name}  \`${c.concept_id}\``, "");
+      L.push(c.summary, "");
+      if (s.via) {
+        const e = s.via, from = conceptById.get(e.from), to = conceptById.get(e.to);
+        L.push(`**Crossing:** ${from.name} *${TYPES[e.type].label}* ${to.name}`, "");
+        L.push(`> “${quoteOf(e)}”`);
+        L.push(`> — \`${citeOf(e)}\``, "");
+      }
+      for (const sg of c.source_segments) {
+        const seg = segById.get(sg);
+        L.push(`Evidence: \`${seg.file_id}\` L${seg.start_line}–L${seg.end_line} — “${seg.title}”`);
+      }
+      L.push("");
+    });
+    L.push("---", "", `*Compiled ${now} by the Tracking prototype (demo substrate).*`, "");
+    return L.join("\n");
+  }
+
+  // ---- season scrubber ----
+  const scrub = $("#scrub");
+  scrub.min = 0; scrub.max = Math.round((T_MAX - T_MIN) / DAY); scrub.step = 7;
+  const syncScrub = () => {
+    scrub.value = Math.round((state.t - T_MIN) / DAY);
+    $("#seasonLabel").textContent = fmtD(state.t);
+  };
+  scrub.addEventListener("input", () => {
+    state.t = T_MIN + (+scrub.value) * DAY;
+    $("#seasonLabel").textContent = fmtD(state.t);
+    stopPlay(); renderAll(false);
+  });
+  function stopPlay() {
+    if (state.playTimer) { clearInterval(state.playTimer); state.playTimer = null; $("#playBtn").textContent = "▸ replay season"; }
+  }
+  $("#playBtn").addEventListener("click", () => {
+    if (state.playTimer) return stopPlay();
+    if (reduceMotion) { state.t = T_MAX; syncScrub(); renderAll(false); return; }
+    state.t = T_MIN; syncScrub(); renderAll(false);
+    $("#playBtn").textContent = "⏸ pause";
+    state.playTimer = setInterval(() => {
+      state.t = Math.min(T_MAX, state.t + 7 * DAY);
+      syncScrub(); renderAll(false);
+      if (state.t >= T_MAX) stopPlay();
+    }, 380);
+  });
+
+  // ---- header controls ----
+  $("#viewTrack").addEventListener("click", () => setView("track"));
+  $("#viewList").addEventListener("click", () => setView("list"));
+  function setView(v) {
+    state.view = v;
+    $("#viewTrack").classList.toggle("on", v === "track");
+    $("#viewList").classList.toggle("on", v === "list");
+    $("#stageWrap").hidden = v !== "track";
+    $("#listWrap").hidden = v !== "list";
+    writeHash(); renderAll(false);
+  }
+  $("#themeBtn").addEventListener("click", () => {
+    const root = document.documentElement;
+    const cur = root.dataset.theme ||
+      (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    root.dataset.theme = cur === "dark" ? "light" : "dark";
+    $("#themeBtn").textContent = root.dataset.theme === "dark" ? "☀ day" : "☾ night";
+  });
+  $("#compileBtn").addEventListener("click", () => {
+    $("#bundleText").value = compileTrail();
+    $("#compileDlg").showModal();
+  });
+  $("#copyBtn").addEventListener("click", async () => {
+    const ta = $("#bundleText");
+    try { await navigator.clipboard.writeText(ta.value); } catch { ta.select(); document.execCommand("copy"); }
+    $("#copyBtn").textContent = "Copied ✓";
+    setTimeout(() => ($("#copyBtn").textContent = "Copy bundle"), 1600);
+  });
+  $("#closeDlg").addEventListener("click", () => $("#compileDlg").close());
+  $("#hintClose").addEventListener("click", () => ($("#hint").hidden = true));
+
+  // keyboard: Backspace walks back along the trail
+  document.addEventListener("keydown", (ev) => {
+    if (ev.target.matches("input,textarea") || $("#compileDlg").open) return;
+    if (ev.key === "Backspace" && state.trail.length > 1) {
+      ev.preventDefault();
+      state.trail.pop();
+      walkSilent(state.trail[state.trail.length - 1].concept);
+    }
+  });
+  function walkSilent(cid) {
+    state.center = cid; state.sticky = null;
+    const c = conceptById.get(cid);
+    const seg = segById.get(c.source_segments[0]);
+    showGround(seg.file_id, seg.start_line, seg.end_line, `Primary evidence — “${seg.title}”`);
+    clearQuote(); renderAll();
+  }
+
+  const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+
+  function renderAll(hash = true) {
+    renderStage(); renderList(); renderRail(); renderTrail();
+    if (hash !== false) writeHash();
+  }
+
+  // ---- boot ----
+  syncScrub();
+  $("#themeBtn").textContent = window.matchMedia("(prefers-color-scheme: dark)").matches ? "☀ day" : "☾ night";
+  setView(state.view);
+  pushTrail(state.center, null);
+  walkSilent(state.center);
+  writeHash();
+})();
+
+</script>
