@@ -245,43 +245,52 @@ years late and finally walkable.`),
   ],
 
   // Edge types and their radial sectors are defined in the app.
-  // evidence: {file, from, to} — the quotation is derived from these lines.
+  //
+  // PROVENANCE CONTRACT (per dossier-system note CC-2A-R): evidence anchors to
+  // a SEGMENT ID, never a loose file+line pair — segments are the protected
+  // provenance unit; absolute line ranges drift when sources update.
+  // `from_offset`/`to_offset` are 0-based line offsets WITHIN the segment
+  // (offset 0 = the segment's start_line), resolved to absolute lines at
+  // render time. An edge's evidence must lie entirely inside its segment.
   edges: [
     { from: "graphrag", to: "line-level-provenance", type: "depends_on",
-      evidence: { file: "graph-session", from: 17, to: 18 }, date: "2026-07-18" },
+      evidence: { segment: "gs-s002", from_offset: 5, to_offset: 6 }, date: "2026-07-18" },
     { from: "trustworthy-memory", to: "line-level-provenance", type: "depends_on",
-      evidence: { file: "voyager-field-notes", from: 9, to: 10 }, date: "2026-06-15" },
+      evidence: { segment: "voy-s001", from_offset: 4, to_offset: 5 }, date: "2026-06-15" },
     { from: "deterministic-reader", to: "trustworthy-memory", type: "influences",
-      evidence: { file: "scout-design-notes", from: 19, to: 20 }, date: "2026-05-12" },
+      evidence: { segment: "sdn-s002", from_offset: 6, to_offset: 7 }, date: "2026-05-12" },
     { from: "library-card-bundles", to: "line-level-provenance", type: "depends_on",
-      evidence: { file: "scout-design-notes", from: 32, to: 33 }, date: "2026-05-12" },
+      evidence: { segment: "sdn-s003", from_offset: 10, to_offset: 11 }, date: "2026-05-12" },
     { from: "concept-graph", to: "graphrag", type: "instance_of",
-      evidence: { file: "graph-session", from: 9, to: 10 }, date: "2026-07-18" },
+      evidence: { segment: "gs-s001", from_offset: 4, to_offset: 5 }, date: "2026-07-18" },
     { from: "graphrag", to: "deterministic-reader", type: "co_occurs",
-      evidence: { file: "graph-session", from: 16, to: 16 }, date: "2026-07-18" },
+      evidence: { segment: "gs-s002", from_offset: 4, to_offset: 4 }, date: "2026-07-18" },
     { from: "co-occurrence", to: "graphrag", type: "evolved_into",
-      evidence: { file: "graph-session", from: 24, to: 25 }, date: "2026-07-18" },
+      evidence: { segment: "gs-s003", from_offset: 4, to_offset: 5 }, date: "2026-07-18" },
     { from: "evidence-verification", to: "graphrag", type: "influences",
-      evidence: { file: "graph-session", from: 24, to: 25 }, date: "2026-07-18" },
+      evidence: { segment: "gs-s003", from_offset: 4, to_offset: 5 }, date: "2026-07-18" },
     { from: "entity-resolution", to: "hairball-problem", type: "influences",
-      evidence: { file: "graph-session", from: 28, to: 29 }, date: "2026-07-18" },
+      evidence: { segment: "gs-s003", from_offset: 8, to_offset: 9 }, date: "2026-07-18" },
     { from: "hairball-problem", to: "tracking-interface", type: "contrasts_with",
-      evidence: { file: "tracking-sketch", from: 10, to: 11 }, date: "2026-07-18" },
+      evidence: { segment: "ts-s001", from_offset: 5, to_offset: 6 }, date: "2026-07-18" },
     { from: "edges-as-quotations", to: "line-level-provenance", type: "depends_on",
-      evidence: { file: "tracking-sketch", from: 17, to: 18 }, date: "2026-07-18" },
+      evidence: { segment: "ts-s002", from_offset: 4, to_offset: 5 }, date: "2026-07-18" },
     { from: "tracking-interface", to: "edges-as-quotations", type: "depends_on",
-      evidence: { file: "tracking-sketch", from: 15, to: 18 }, date: "2026-07-18" },
+      evidence: { segment: "ts-s002", from_offset: 2, to_offset: 5 }, date: "2026-07-18" },
     { from: "temporal-scrubber", to: "tracking-interface", type: "co_occurs",
-      evidence: { file: "tracking-sketch", from: 24, to: 25 }, date: "2026-07-18" },
+      evidence: { segment: "ts-s003", from_offset: 2, to_offset: 3 }, date: "2026-07-18" },
     { from: "tracking-interface", to: "memex-trails", type: "instance_of",
-      evidence: { file: "tracking-sketch", from: 34, to: 35 }, date: "2026-07-18" },
+      evidence: { segment: "ts-s004", from_offset: 5, to_offset: 6 }, date: "2026-07-18" },
     { from: "tracking-interface", to: "library-card-bundles", type: "influences",
-      evidence: { file: "tracking-sketch", from: 31, to: 33 }, date: "2026-07-18" },
+      evidence: { segment: "ts-s004", from_offset: 2, to_offset: 4 }, date: "2026-07-18" },
     { from: "library-card-bundles", to: "concept-graph", type: "depends_on",
-      evidence: { file: "graph-session", from: 33, to: 35 }, date: "2026-07-18" },
+      evidence: { segment: "gs-s004", from_offset: 2, to_offset: 4 }, date: "2026-07-18" },
   ],
 
-  territories: [
+  // Vocabulary (per dossier-system note): "territories" = WORKSPACES
+  // (platform/thematic axis). The rail's thematic concept clusters are
+  // GROVES — clusters of trees on the savanna, a different axis entirely.
+  groves: [
     { id: "provenance", name: "Provenance & trust",
       concepts: ["line-level-provenance", "deterministic-reader", "trustworthy-memory", "evidence-verification"] },
     { id: "building", name: "Building the graph",

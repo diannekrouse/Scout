@@ -11,8 +11,8 @@
   const conceptById = new Map(DATA.concepts.map((c) => [c.concept_id, c]));
   const segById = new Map(DATA.segments.map((s) => [s.segment_id, s]));
   const wsById = new Map(DATA.workspaces.map((w) => [w.id, w]));
-  const terrByConcept = new Map();
-  DATA.territories.forEach((t) => t.concepts.forEach((c) => terrByConcept.set(c, t)));
+  const groveByConcept = new Map();
+  DATA.groves.forEach((t) => t.concepts.forEach((c) => groveByConcept.set(c, t)));
 
   const DAY = 86400000;
   const parseD = (s) => Date.parse(s + "T00:00:00Z");
@@ -31,13 +31,23 @@
     return m;
   };
 
+  // Provenance contract: evidence anchors to a segment_id + intra-segment
+  // offsets; absolute lines are resolved HERE, at render time, so segment
+  // remapping (content-hash staleness) never strands a quotation.
+  const resolveEvidence = (e) => {
+    const seg = segById.get(e.evidence.segment);
+    const src = DATA.sources[seg.file_id];
+    const from = seg.start_line + e.evidence.from_offset;
+    const to = seg.start_line + e.evidence.to_offset;
+    return { seg, src, from, to };
+  };
   const quoteOf = (e) => {
-    const src = DATA.sources[e.evidence.file];
-    return src.lines.slice(e.evidence.from - 1, e.evidence.to).join(" ").replace(/\s+/g, " ").trim();
+    const { src, from, to } = resolveEvidence(e);
+    return src.lines.slice(from - 1, to).join(" ").replace(/\s+/g, " ").trim();
   };
   const citeOf = (e) => {
-    const src = DATA.sources[e.evidence.file];
-    return `${src.file_id} · L${e.evidence.from}–L${e.evidence.to} · ${e.date}`;
+    const { seg, from, to } = resolveEvidence(e);
+    return `${seg.segment_id} · L${from}–L${to} · ${e.date}`;
   };
 
   // ---- relation grammar: sector bands (deg, 0=east, clockwise) ----
@@ -82,7 +92,7 @@
     }
     return out;
   };
-  const weightOf = (e) => e.evidence.to - e.evidence.from + 1;
+  const weightOf = (e) => e.evidence.to_offset - e.evidence.from_offset + 1;
 
   // ---- trail ----
   function pushTrail(cid, via) {
@@ -136,7 +146,8 @@
       `${esc(from.name)} <span class="reltype">${TYPES[e.type].label}</span> ${esc(to.name)}` +
       (stick ? ` <button class="unstick" id="unstickBtn" title="Unpin">✕</button>` : "");
     if (stick) $("#unstickBtn").addEventListener("click", () => { state.sticky = null; clearQuote(); renderStage(); });
-    showGround(e.evidence.file, e.evidence.from, e.evidence.to, "Crossing evidence");
+    const ev = resolveEvidence(e);
+    showGround(ev.src.file_id, ev.from, ev.to, `Crossing evidence — ${ev.seg.segment_id}`);
   }
   function clearQuote() {
     if (state.sticky) return;
@@ -265,6 +276,10 @@
       svg.querySelectorAll(`.edge[data-ek="${key}"]`).forEach((el) => el.classList.toggle("hover", on));
     }
   }
+  const citeParts = (e) => {
+    const { seg, from, to } = resolveEvidence(e);
+    return `${seg.segment_id} L${from}–${to}`;
+  };
   const edgeKey = (e) => `${e.from}|${e.type}|${e.to}`;
   const edgeByKey = (k) => { const [f, t, o] = k.split("|"); return DATA.edges.find((e) => e.from === f && e.type === t && e.to === o); };
 
@@ -278,7 +293,7 @@
         `<td><span class="reltype">${TYPES[e.type].label}</span>${n.outgoing ? " →" : " ←"}</td>` +
         `<td><button class="linklike walkbtn">${esc(c.name)}</button></td>` +
         `<td><span class="chip ${ws.color}">${esc(ws.name)}</span></td>` +
-        `<td><code>${esc(e.evidence.file)} L${e.evidence.from}–${e.evidence.to}</code></td>` +
+        `<td><code>${esc(citeParts(e))}</code></td>` +
         `<td>${esc(e.date)}</td>` +
         `<td class="qcell">“${esc(q.length > 90 ? q.slice(0, 90) + "…" : q)}”</td></tr>`;
     }).join("");
@@ -296,7 +311,7 @@
   // ---- trailhead rail ----
   function renderRail() {
     let html = "";
-    for (const t of DATA.territories) {
+    for (const t of DATA.groves) {
       html += `<div class="terr"><div class="terrname eyebrow">${esc(t.name)}</div>`;
       for (const cid of t.concepts) {
         const c = conceptById.get(cid);

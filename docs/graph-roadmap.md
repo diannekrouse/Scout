@@ -23,10 +23,18 @@ ingesters. The reader never changes its nature.
 
 **Scout's edge (literally).** Because segments carry `start_line`/`end_line`,
 Scout can do what mainstream GraphRAG cannot: give every *edge* line-level
-provenance. Convention adopted here: every edge carries
-`evidence_segments` / evidence line ranges, and quotations are **derived from
-the lines at read time, never stored** — so a quote can never drift from its
-source, and every edge is machine-verifiable. `ConceptEdgeSchema` is
+provenance. **Evidence contract (aligned with the dossier-system session,
+ref CC-2A-R):** edge evidence anchors to a **segment_id, never a loose
+file+line pair** — absolute line ranges drift when sources update, and the
+pipeline's content-hash staleness system protects *segment* references
+(CC-2A-R is still evolving — depend on the *contract* "segments survive
+source updates," not on its current internals). For
+quotation precision, evidence carries intra-segment line offsets:
+`evidence: [{segment, from_offset, to_offset}]`, resolved to absolute lines
+at render time (`abs = segment.start_line + offset`), with the invariant that
+evidence lies entirely inside its segment. Quotations are **derived from the
+resolved lines at read time, never stored** — so a quote can never drift from
+its source, and every edge is machine-verifiable. `ConceptEdgeSchema` is
 `.passthrough()`, so this needs no schema change.
 
 **Built so far (this branch).**
@@ -88,6 +96,37 @@ existing deep-link convention (`/chats/[id]?from=N&to=M`) for click-through,
 and trail-compile flowing through the Library Card / bundle machinery
 (trails persist as an overlay file at the dossier root, like
 `library-card.json`).
+
+## Substrate contracts (per the dossier-system session)
+
+Build against these; invent nothing the substrate hasn't shown:
+
+- `index/concepts*.json` — merged concept registry (glob-merge, last-writer-wins)
+- `index/concept-graph.json` — typed edges, `{edges: [...]}` envelope
+- `index/segments.json` — segments, each carrying `source_date` (the time axis)
+- `index/workspaces.json` — workspace registry
+- `readSourceBody()` (`lib/dossier.ts`) — source text for the Ground
+- `source_url` on catalog concepts — the external-provenance pattern
+- Dossier-side design scrolls (not in this repo): the knowledge-graph-explorer
+  and import/review-UI roadmaps under `workspaces/omegahive/scout-integration/`
+  in the private substrate — consult via the dossier-system session or a
+  compiled bundle.
+
+**Vocabulary:** *territories* = **workspaces** (platform/thematic axis, node
+color + shape). The rail's thematic concept clusters are **groves** — a
+different axis (categories / communities). Multi-workspace chats need both
+distinct.
+
+## Forward: sender nodes (pending CC-2B)
+
+When Telegram sources gain participant blocks with pseudonymous stable sender
+IDs, senders become a second first-class node kind. Tracking renders them
+with their own glyph; relations like `voiced_by` / `carried_between` join the
+sector grammar; a walk can follow *who carried an idea between chats*, not
+just what it touched — the axis that makes dialogue dynamics visible
+(multi-bot groups, attractor work). Design consequence today: keep node kind
+extensible in Phase 1/3 outputs (concepts now, senders later) and keep the
+pseudonymous IDs as the only identity that ever enters the substrate.
 
 ## Operational notes
 

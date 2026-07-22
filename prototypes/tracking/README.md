@@ -8,9 +8,12 @@ reading the prints. No dependencies, no build step needed to view; open
 ## What it demonstrates
 
 - **Edges are quotations.** Hover any connection (or table row) and you read
-  the verbatim sentence where two ideas touched — derived live from
-  `{file, from, to}` line ranges, never stored, so a quote can never drift
-  from its source. Scout's line-level provenance, applied to relationships.
+  the verbatim sentence where two ideas touched — never stored, always
+  derived. Evidence anchors to a **segment_id + intra-segment line offsets**
+  (`{segment, from_offset, to_offset}`), resolved to absolute lines at render
+  time: segments are the protected provenance contract (they survive source
+  updates via the pipeline's content-hash staleness system), while offsets
+  keep quotations line-precise. A quote can never drift from its source.
 - **The Track view.** One concept at center; neighbors fan out radially,
   sorted by *meaning*, not physics — angular sector = relation type
   (depends on ↑, evolved into →, contrasts with ←, …), distance = evidence
@@ -28,6 +31,26 @@ reading the prints. No dependencies, no build step needed to view; open
 - Light/dark (day / night-tracking) themes, keyboard walking (Enter to walk,
   Backspace to retrace), a table twin of the Track view, URL-addressable
   state (`#c=<concept>&t=<date>&v=track|list`).
+
+## Vocabulary
+
+Two clustering axes, two names — they are different things:
+
+- **Territories = workspaces** (the platform/thematic axis: scout-dev,
+  voyager, claude-code). Encoded as node color + shape; named in the legend.
+- **Groves = thematic concept clusters** (the Trailhead rail's groupings —
+  clusters of trees on the savanna). In the real substrate these come from
+  concept categories / community detection, not from workspaces.
+
+## Forward: sender nodes (pending CC-2B)
+
+Once Telegram sources carry participant blocks with pseudonymous stable
+sender IDs, the graph gains a second node kind: **senders**. Tracking would
+render them with their own glyph, and a walk could follow not just what an
+idea touched but *who carried it between chats* — the axis that makes
+dialogue dynamics (multi-bot groups, attractor work) visible. Nothing in the
+current layout precludes it: senders are one more shape in the legend and one
+more relation family (`voiced_by`, `carried_between`) in the sector grammar.
 
 ## Files
 

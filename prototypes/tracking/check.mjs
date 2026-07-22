@@ -30,38 +30,48 @@ for (const c of DATA.concepts) {
     if (!segIds.has(sg)) err(`concept ${c.concept_id}: unknown segment ${sg}`);
 }
 
-// Territories cover every concept exactly once
+// Groves cover every concept exactly once
 const covered = new Map();
-for (const t of DATA.territories)
+for (const t of DATA.groves)
   for (const cid of t.concepts) {
-    if (!conceptIds.has(cid)) err(`territory ${t.id}: unknown concept ${cid}`);
+    if (!conceptIds.has(cid)) err(`grove ${t.id}: unknown concept ${cid}`);
     covered.set(cid, (covered.get(cid) || 0) + 1);
   }
 for (const cid of conceptIds)
-  if ((covered.get(cid) || 0) !== 1) err(`concept ${cid} covered ${covered.get(cid) || 0} times by territories`);
+  if ((covered.get(cid) || 0) !== 1) err(`concept ${cid} covered ${covered.get(cid) || 0} times by groves`);
 
-// Edges — endpoints exist, evidence resolves, quote derivable
+// Edges — endpoints exist; evidence is SEGMENT-ANCHORED (the provenance
+// contract): segment exists, offsets lie inside the segment, resolved
+// absolute lines lie inside the file, quote derivable.
+const segMap = new Map(DATA.segments.map((s) => [s.segment_id, s]));
 console.log("\n=== Derived edge quotations (review each for sense) ===\n");
 for (const e of DATA.edges) {
   if (!conceptIds.has(e.from)) err(`edge: unknown from ${e.from}`);
   if (!conceptIds.has(e.to)) err(`edge: unknown to ${e.to}`);
-  const src = DATA.sources[e.evidence.file];
-  if (!src) { err(`edge ${e.from}->${e.to}: unknown evidence file`); continue; }
-  const { from, to } = e.evidence;
-  if (from < 1 || to > src.lines.length || from > to) {
-    err(`edge ${e.from}->${e.to}: evidence ${from}-${to} outside 1-${src.lines.length}`);
+  const seg = segMap.get(e.evidence.segment);
+  if (!seg) { err(`edge ${e.from}->${e.to}: unknown evidence segment ${e.evidence.segment}`); continue; }
+  const src = DATA.sources[seg.file_id];
+  const { from_offset, to_offset } = e.evidence;
+  if (from_offset < 0 || from_offset > to_offset) {
+    err(`edge ${e.from}->${e.to}: bad offsets ${from_offset}-${to_offset}`); continue;
+  }
+  const from = seg.start_line + from_offset, to = seg.start_line + to_offset;
+  if (to > seg.end_line) {
+    err(`edge ${e.from}->${e.to}: evidence L${from}-L${to} escapes segment ${seg.segment_id} (${seg.start_line}-${seg.end_line})`);
     continue;
   }
+  if (to > src.lines.length) { err(`edge ${e.from}->${e.to}: resolved lines exceed file`); continue; }
   const quote = src.lines.slice(from - 1, to).join(" ").replace(/\s+/g, " ").trim();
   if (!quote) err(`edge ${e.from}->${e.to}: empty quote`);
   console.log(`[${e.type}] ${e.from} → ${e.to}`);
-  console.log(`  ${src.file_id} L${from}–L${to} (${e.date})`);
+  console.log(`  ${seg.segment_id} → ${src.file_id} L${from}–L${to} (${e.date})`);
   console.log(`  “${quote}”\n`);
 }
 
 // Date sanity
 for (const e of DATA.edges) {
-  const srcDate = DATA.sources[e.evidence.file]?.date;
+  const seg = segMap.get(e.evidence.segment);
+  const srcDate = seg ? DATA.sources[seg.file_id]?.date : null;
   if (srcDate && e.date !== srcDate) err(`edge ${e.from}->${e.to}: date ${e.date} != source date ${srcDate}`);
 }
 
