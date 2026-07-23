@@ -66,7 +66,9 @@ a field copy — **yes, wanted.**
 
 ## The phases
 
-### Phase 1 — `scripts/build-graph.py` (deterministic, stdlib only)
+### Phase 1 — `scripts/build-graph.py` (deterministic, stdlib only) — **BUILT ✓**
+Implemented and verified against a generated fixture dossier (expected edge
+set produced exactly; pipeline `source_hashes` preferred; orphans reported).
 Co-occurrence baseline: concepts sharing `source_segments` (or a source file)
 get `co_occurs` edges with `evidence_segments` and a weight; prune edges with
 fewer than 2 evidence segments. Follow `segment.py` conventions: stdlib only,
@@ -74,7 +76,13 @@ fewer than 2 evidence segments. Follow `segment.py` conventions: stdlib only,
 `--force`, idempotent re-runs. Output: `index/concept-graph.json`
 (`{edges: [...]}` envelope).
 
-### Phase 2 — graph-aware bundles (reader-side, deterministic)
+### Phase 2 — graph-aware bundles (reader-side, deterministic) — **BUILT ✓**
+`expandConcepts()` in `lib/dossier.ts`; opt-in "Include related · 1 hop"
+checkbox in the Library Card panel (offered only when a graph exists and a
+concept is pinned); bundles gain Related-concepts + Connections sections
+with evidence refs, JSON bundles a structured `expansion` block.
+Browser-verified end-to-end against the fixture dossier; non-expanded
+bundles remain byte-identical to v1.
 Add an `expandConcepts(seedIds, hops)` BFS to `lib/dossier.ts` (reuse
 `listConceptEdges()`, which already enforces `ALLOWED_WORKSPACES`
 transitively). In `compileLibraryCardAction`
@@ -160,11 +168,15 @@ pseudonymous IDs as the only identity that ever enters the substrate.
 
 ## Sensible next actions
 
-1. Implement Phase 1 + 2 (small, deterministic, immediately visible in the
-   existing UI once any dossier has concepts).
-2. Run Phase 1 against a real dossier; eyeball the graph on the concept pages.
-3. Phase 3 behind it, gated by the verification pass.
-4. Port Tracking (Phase 5) once real edges exist to walk.
+1. ~~Implement Phase 1 + 2~~ **done** — run them against a real dossier
+   (`build-graph.py` then pin + compile with "Include related") and eyeball
+   the graph on the concept pages.
+2. Phase 3 (extract-concepts.py) behind it, gated by the verification pass.
+3. Port Tracking (Phase 5) once real edges exist to walk.
+4. Goertzel corpus demo ("the Goertzel Grove"): curated PDFs → pdftotext →
+   `goertzel` workspace → segment → Phases 1+3 → Tracking + scout-to-metta
+   export. Ben's own concepts, walkable, every edge his own words, loadable
+   into a Hyperon AtomSpace with receipts.
 
 ## Appendix — research levers (vetted imports; sources quarantined)
 
@@ -196,10 +208,12 @@ theorem constants do not.
    PageRank diffusion from pinned seeds as a graded relatedness score for
    bundle expansion, replacing blunt 1-hop when the graph is dense enough.
 5. **Goertzel bridges** (pairs with the hive/swarm direction):
-   - `scout-to-metta.py` — export concepts/edges/anchors as Atomese/MeTTa so
-     OpenCog Hyperon agents load Scout as a provenance-grounded AtomSpace;
-     evidence anchors ride as metadata. Positions Scout as the memory
-     substrate with receipts for agent swarms.
+   - `scout-to-metta.py` — **BUILT ✓** (schema v0, fixture-verified) —
+     exports concepts/edges/anchors as Atomese/MeTTa so OpenCog Hyperon
+     agents load Scout as a provenance-grounded AtomSpace; every relation
+     carries its `(evidence …)` segment-anchor. Positions Scout as the
+     memory substrate with receipts for agent swarms. Schema alignment with
+     the consuming swarm still pending.
    - ECAN-style attention overlay (`attention.json`, overlay-only):
      importance spreading along verified edges from actively-walked
      concepts, with decay; drives Trailhead ordering. Substrate untouched.

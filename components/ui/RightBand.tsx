@@ -9,6 +9,7 @@
 import Link from "next/link";
 import {
   listConcepts,
+  listConceptEdges,
   listSourceFiles,
   listSegments,
   listWorkspaceSummaries,
@@ -27,7 +28,7 @@ import {
 } from "@/app/actions/library-card";
 
 export default async function RightBand() {
-  const [concepts, files, segments, workspaceSummaries, card, brand, bundleStats] =
+  const [concepts, files, segments, workspaceSummaries, card, brand, bundleStats, conceptEdges] =
     await Promise.all([
       listConcepts(),
       listSourceFiles(),
@@ -36,7 +37,13 @@ export default async function RightBand() {
       loadLibraryCard(),
       loadDossierBrandConfig(),
       listBundleStats(),
+      listConceptEdges(),
     ]);
+
+  // Graph expansion is offered only when there is a graph to walk and a
+  // pinned concept to walk from.
+  const offerExpand =
+    conceptEdges.length > 0 && card.items.some((i) => i.kind === "concept");
 
   // Resolve titles + workspace info for each carded item.
   const conceptById = new Map(concepts.map((c) => [c.concept_id, c]));
@@ -167,7 +174,11 @@ export default async function RightBand() {
         </Link>
 
         {/* ============ Library Card ============ */}
-        <LibraryCardPanel items={cardItems} bundleStats={bundleStats} />
+        <LibraryCardPanel
+          items={cardItems}
+          bundleStats={bundleStats}
+          offerExpand={offerExpand}
+        />
         {/* ====================================== */}
 
         {/* TEMPORARILY HIDDEN for the SNET demo — restore after walkthrough.
@@ -289,9 +300,12 @@ const KIND_TINT: Record<
 function LibraryCardPanel({
   items,
   bundleStats,
+  offerExpand,
 }: {
   items: ResolvedCardItem[];
   bundleStats: { count: number; lastCreatedAt: string | null };
+  /** Whether to offer graph expansion (a concept graph exists AND a concept is pinned). */
+  offerExpand: boolean;
 }) {
   const isEmpty = items.length === 0;
   return (
@@ -386,15 +400,37 @@ function LibraryCardPanel({
             })}
           </ul>
 
+          {offerExpand && (
+            <label
+              className="mb-1.5 flex items-center gap-1.5 text-[10px] text-dim cursor-pointer select-none"
+              title="Expand pinned concepts one hop along the concept graph — related concepts and their crossings ride along with evidence references"
+            >
+              <input
+                type="checkbox"
+                name="expand"
+                value="1"
+                form="compile-bundle-form"
+                className="h-3 w-3 accent-[#7DD3A0]"
+              />
+              Include related · 1 hop along the graph
+            </label>
+          )}
           <div className="flex gap-1.5">
-            {/* Markdown — the human-format default. Inlines actual segment
-                content so you can paste it into any LLM chat (or read it
-                standalone). The bigger button because it's what people want. */}
-            <form action={compileLibraryCardAction} className="flex-1">
-              <input type="hidden" name="format" value="markdown" />
+            {/* One form, two format submits (the button's name/value rides
+                the submit), so the expand checkbox governs both. */}
+            <form
+              id="compile-bundle-form"
+              action={compileLibraryCardAction}
+              className="flex-1 flex gap-1.5"
+            >
+              {/* Markdown — the human-format default. Inlines actual segment
+                  content so you can paste it into any LLM chat (or read it
+                  standalone). The bigger button because it's what people want. */}
               <button
                 type="submit"
-                className="w-full rounded-full px-3 py-2 text-xs font-semibold text-paper inline-flex items-center justify-center gap-1.5"
+                name="format"
+                value="markdown"
+                className="flex-1 rounded-full px-3 py-2 text-xs font-semibold text-paper inline-flex items-center justify-center gap-1.5"
                 style={{
                   background:
                     "linear-gradient(135deg, #7DD3A0 0%, #F4C770 100%)",
@@ -415,13 +451,12 @@ function LibraryCardPanel({
                 </svg>
                 Compile · MD
               </button>
-            </form>
-            {/* JSON — the agent format. Same data, structured for programmatic
-                consumption. Smaller button because most people want Markdown. */}
-            <form action={compileLibraryCardAction}>
-              <input type="hidden" name="format" value="json" />
+              {/* JSON — the agent format. Same data, structured for programmatic
+                  consumption. Smaller button because most people want Markdown. */}
               <button
                 type="submit"
+                name="format"
+                value="json"
                 aria-label="Compile bundle as JSON for agents"
                 title="Compile a JSON bundle (structured input for agents)"
                 className="rounded-full h-8 px-3 text-[11px] font-bold inline-flex items-center justify-center text-body border border-line bg-paper hover:border-mint hover:text-bright transition-colors"

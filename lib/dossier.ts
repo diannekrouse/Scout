@@ -816,6 +816,37 @@ export async function listConceptEdges(): Promise<ConceptEdge[]> {
   });
 }
 
+/**
+ * Graph expansion: breadth-first n-hop neighborhood over the concept graph.
+ * Deterministic traversal; built on listConceptEdges(), so ALLOWED_WORKSPACES
+ * and curation visibility are already enforced transitively. Returns the full
+ * reached set (seeds included) and every edge of the induced subgraph — i.e.
+ * all visible crossings among the reached concepts, including direct links
+ * between two seeds — for bundle "Connections" rendering.
+ */
+export async function expandConcepts(
+  seedIds: Set<string>,
+  hops: number,
+): Promise<{ conceptIds: Set<string>; viaEdges: ConceptEdge[] }> {
+  const edges = await listConceptEdges();
+  const reached = new Set(seedIds);
+  let frontier = new Set(seedIds);
+  for (let hop = 0; hop < hops && frontier.size > 0; hop++) {
+    const next = new Set<string>();
+    for (const edge of edges) {
+      if (!edge.from || !edge.to) continue;
+      if (frontier.has(edge.from) && !reached.has(edge.to)) next.add(edge.to);
+      else if (frontier.has(edge.to) && !reached.has(edge.from)) next.add(edge.from);
+    }
+    next.forEach((id) => reached.add(id));
+    frontier = next;
+  }
+  const viaEdges = edges.filter(
+    (e) => e.from && e.to && reached.has(e.from) && reached.has(e.to),
+  );
+  return { conceptIds: reached, viaEdges };
+}
+
 // -- Aggregations used by listing pages --------------------------------------
 
 export interface WorkspaceSummary extends Workspace {

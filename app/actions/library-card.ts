@@ -11,11 +11,12 @@ import {
   listSegments,
   listSourceFiles,
   listWorkspaces,
+  expandConcepts,
   readSourceBody,
   dossierRootForDisplay,
   type LibraryCardItem,
 } from "@/lib/dossier";
-import type { Concept, Segment, SourceFile, Workspace } from "@/lib/schemas";
+import type { Concept, ConceptEdge, Segment, SourceFile, Workspace } from "@/lib/schemas";
 
 /**
  * Toggle an item on the Library Card. If it's already there, remove it;
@@ -69,6 +70,10 @@ export async function compileLibraryCardAction(formData: FormData): Promise<void
   const formatRaw = formData.get("format");
   const format: "json" | "markdown" =
     formatRaw === "json" || formatRaw === "markdown" ? formatRaw : "markdown";
+  // Phase 2 (graph-aware bundles): opt-in one-hop expansion along the
+  // concept graph. Off by default — the checkbox in the Library Card panel
+  // submits expand=1.
+  const expand = formData.get("expand") === "1";
 
   const card = await loadLibraryCard();
   if (card.items.length === 0) return;
@@ -96,6 +101,24 @@ export async function compileLibraryCardAction(formData: FormData): Promise<void
   const sources = allSources.filter((s) => fileIds.has(s.file_id));
   const segments = allSegments.filter((s) => segIds.has(s.segment_id));
 
+  // Opt-in graph expansion: related concepts one hop from the pinned ones,
+  // plus every visible crossing among the reached set. Related concepts
+  // bring their own source segments so their evidence rides along.
+  let relatedConcepts: Concept[] = [];
+  let connections: ConceptEdge[] = [];
+  if (expand && conceptIds.size > 0) {
+    const expansion = await expandConcepts(conceptIds, 1);
+    connections = expansion.viaEdges;
+    relatedConcepts = allConcepts.filter(
+      (c) =>
+        expansion.conceptIds.has(c.concept_id) && !conceptIds.has(c.concept_id),
+    );
+  }
+  const relatedSegIds = new Set<string>();
+  for (const c of relatedConcepts) {
+    for (const sid of c.source_segments ?? []) relatedSegIds.add(sid);
+  }
+
   // Pull in segments that belong to any picked source (so the bundle is
   // self-contained: a source without its segments is half a thing).
   const segsForPickedSources = allSegments.filter((s) => {
@@ -106,14 +129,19 @@ export async function compileLibraryCardAction(formData: FormData): Promise<void
         : null);
     return fid ? fileIds.has(fid) : false;
   });
-  const segMerged = [
+  const segMergedMap = new Map<string, Segment>();
+  for (const s of [
     ...segments,
-    ...segsForPickedSources.filter((s) => !segIds.has(s.segment_id)),
-  ];
+    ...segsForPickedSources,
+    ...allSegments.filter((s) => relatedSegIds.has(s.segment_id)),
+  ]) {
+    segMergedMap.set(s.segment_id, s);
+  }
+  const segMerged = Array.from(segMergedMap.values());
 
   // Workspaces touched by any of the picked items
   const wsTouched = new Set<string>();
-  for (const c of concepts) {
+  for (const c of [...concepts, ...relatedConcepts]) {
     if (c.primary_workspace) wsTouched.add(c.primary_workspace);
     for (const w of c.workspace_secondary ?? []) wsTouched.add(w);
   }
@@ -137,11 +165,18 @@ export async function compileLibraryCardAction(formData: FormData): Promise<void
       concepts: concepts.length,
       sources: sources.length,
       segments: segMerged.length,
+      ...(expand ? { related_concepts: relatedConcepts.length, connections: connections.length } : {}),
     },
     workspaces,
     concepts,
     sources,
     segments: segMerged,
+    // Present only when the user opted in to graph expansion. JSON.stringify
+    // drops the undefined, so non-expanded bundles are byte-identical to v1.
+    expansion:
+      expand && (relatedConcepts.length || connections.length)
+        ? { hops: 1, related: relatedConcepts, connections }
+        : undefined,
   };
 
   // Filename: {workspace}_card_{date}_{time}.{ext}
@@ -277,6 +312,7 @@ function renderMarkdownBundle(
     concepts: Concept[];
     sources: SourceFile[];
     segments: Segment[];
+    expansion?: { hops: number; related: Concept[]; connections: ConceptEdge[] };
   },
   segmentBodies: Map<string, string>,
 ): string {
@@ -359,6 +395,66 @@ function renderMarkdownBundle(
         );
         lines.push("");
       }
+    }
+  }
+
+  // Related concepts + Connections — present only when the bundle was
+  // compiled with graph expansion. Every crossing cites its evidence
+  // segment (and resolved lines, when the segment is in the bundle).
+  if (bundle.expansion) {
+    const segById = new Map(bundle.segments.map((s) => [s.segment_id, s]));
+    if (bundle.expansion.related.length) {
+      lines.push(`## Related concepts (${bundle.expansion.hops} hop along the graph)`);
+      lines.push("");
+      lines.push(
+        "> Not pinned directly — pulled in because the concept graph connects them to your picks.",
+      );
+      lines.push("");
+      for (const c of bundle.expansion.related) {
+        lines.push(`### ${c.name || c.concept_id}  \`${c.concept_id}\``);
+        if (c.summary) {
+          lines.push("");
+          lines.push(c.summary);
+        }
+        lines.push("");
+      }
+    }
+    if (bundle.expansion.connections.length) {
+      lines.push("## Connections");
+      lines.push("");
+      for (const e of bundle.expansion.connections) {
+        const rel = e.type || "related_to";
+        const extra = e as ConceptEdge & {
+          weight?: unknown;
+          quote?: unknown;
+          evidence?: unknown;
+        };
+        const weight =
+          typeof extra.weight === "number" ? ` · ${extra.weight} shared segment${extra.weight === 1 ? "" : "s"}` : "";
+        lines.push(`- \`${e.from}\` —*${rel}*→ \`${e.to}\`${weight}`);
+        const evList = Array.isArray(extra.evidence)
+          ? extra.evidence
+          : extra.evidence
+            ? [extra.evidence]
+            : [];
+        for (const ev of evList) {
+          if (!ev || typeof ev !== "object") continue;
+          const anchor = ev as { segment?: string; from_offset?: number; to_offset?: number };
+          if (!anchor.segment) continue;
+          const seg = segById.get(anchor.segment);
+          if (seg && typeof seg.start_line === "number") {
+            const a = seg.start_line + (anchor.from_offset ?? 0);
+            const b = seg.start_line + (anchor.to_offset ?? 0);
+            lines.push(`  - evidence: \`${anchor.segment}\` · L${a}–L${b}${seg.title ? ` · “${seg.title}”` : ""}`);
+          } else {
+            lines.push(`  - evidence: \`${anchor.segment}\``);
+          }
+        }
+        if (typeof extra.quote === "string" && extra.quote) {
+          lines.push(`  - “${extra.quote}”`);
+        }
+      }
+      lines.push("");
     }
   }
 
