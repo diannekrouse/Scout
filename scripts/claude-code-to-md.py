@@ -177,8 +177,16 @@ def convert_session(jsonl_path, include_thinking=False):
     return content, session_date
 
 
-def convert(project_dir, output_dir, include_thinking=False):
-    """Convert all JSONL files in a Claude Code project directory."""
+def convert(project_dir, output_dir, include_thinking=False, title=None):
+    """Convert all JSONL files in a Claude Code project directory.
+
+    When `title` is given AND the project holds a single session, the output
+    file is named `YYYY-MM-DD-<title-slug>.md` and the human title is used as
+    the document's H1 (so Scout's index shows the chat's real name, e.g.
+    "Graph technologies for AI Coding", instead of a session UUID). With
+    multiple sessions a single title can't name them all, so it is ignored
+    for naming and the default date+id scheme is used.
+    """
     project_dir = Path(project_dir).expanduser().resolve()
     output_dir = Path(output_dir).expanduser().resolve()
 
@@ -190,6 +198,11 @@ def convert(project_dir, output_dir, include_thinking=False):
     if not jsonl_files:
         print(f"[error] No .jsonl files found in {project_dir}")
         return 1
+
+    if title and len(jsonl_files) > 1:
+        print(f"[note] --title ignored: {len(jsonl_files)} sessions here, "
+              f"a single title can't name them all. Using date+id names.")
+        title = None
 
     project_folder = safe_folder_name(project_dir.name)
     output_project_dir = output_dir / project_folder
@@ -203,7 +216,11 @@ def convert(project_dir, output_dir, include_thinking=False):
             skipped += 1
             continue
 
-        out_name = f"{session_date}-{jsonl_file.stem[:8]}.md"
+        if title:
+            out_name = f"{session_date}-{safe_folder_name(title)}.md"
+            content = f"# {title}\n\n{content}"
+        else:
+            out_name = f"{session_date}-{jsonl_file.stem[:8]}.md"
         out_path = output_project_dir / out_name
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(content)
@@ -232,8 +249,15 @@ def main():
         action="store_true",
         help="Include Claude's thinking blocks in the output",
     )
+    parser.add_argument(
+        "--title",
+        default=None,
+        help="Human chat name for a single-session export (used as the "
+             "filename slug and document H1, e.g. \"Graph technologies for AI Coding\")",
+    )
     args = parser.parse_args()
-    return convert(args.project_dir, args.output_dir, include_thinking=args.include_thinking) or 0
+    return convert(args.project_dir, args.output_dir,
+                   include_thinking=args.include_thinking, title=args.title) or 0
 
 
 if __name__ == "__main__":
