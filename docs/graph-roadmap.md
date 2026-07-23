@@ -208,19 +208,44 @@ theorem constants do not.
    PageRank diffusion from pinned seeds as a graded relatedness score for
    bundle expansion, replacing blunt 1-hop when the graph is dense enough.
 5. **Goertzel bridges** (pairs with the hive/swarm direction):
-   - `scout-to-metta.py` — **BUILT ✓** (schema v0, fixture-verified) —
-     exports concepts/edges/anchors as Atomese/MeTTa so OpenCog Hyperon
-     agents load Scout as a provenance-grounded AtomSpace; every relation
-     carries its `(evidence …)` segment-anchor. Positions Scout as the
-     memory substrate with receipts for agent swarms. Schema alignment with
-     the consuming swarm still pending.
+   - `scout-to-metta.py` — **BUILT ✓ AND RUNTIME-VERIFIED ✓** — exports
+     concepts/edges/anchors as Atomese/MeTTa; every relation carries its
+     `(evidence …)` segment-anchor. Verified against the real Hyperon
+     runtime (`pip install hyperon`): the fixture export loaded into a
+     MeTTa space and answered `!(match &self (co_occurs $a $b) ($a $b))`,
+     workspace-filtered name queries, and evidence-anchor lookups. Scout is
+     a working memory substrate with receipts for Hyperon agents today.
+     Schema alignment with the consuming swarm still pending.
    - ECAN-style attention overlay (`attention.json`, overlay-only):
      importance spreading along verified edges from actively-walked
      concepts, with decay; drives Trailhead ordering. Substrate untouched.
-   - Attractor analysis (post-CC-2B): the sender–concept temporal stream
-     supports recurrence/motif mining — the concept-configurations a group
-     keeps returning to, each return visit citing its lines. Deterministic
-     dynamics analysis; no runtime model.
+   - Attractor analysis — now with a concrete algorithm: **the Chaos
+     Language Algorithm (CLA)**, from Goertzel's implementation-oriented
+     spec (chunks = repeated sequential blocks / "and-then" structure;
+     meta-symbols = categories of contextually substitutable tokens /
+     "one-of-these" structure; joint induction under a two-part MDL
+     objective; the spec's appendix is written directly for coding agents).
+     Scout-native Phase 1: **concept assignment IS the partition** — the
+     spec allows a "problem-specific symbolic dynamics partition," and
+     labeling each message/segment by its concepts symbolizes the dialogue
+     trajectory with receipts intact. Then: chunk rules = a group's
+     habitual conversational moves; meta-symbols = emergent categories
+     (data-driven groves; a dynamics-based cousin of entity resolution);
+     the induced grammar per chat/agent/epoch = its attractor signature;
+     grammar drift across time windows = bifurcation tracking. Vocabulary:
+     these are **waterholes** (basins the conversation returns to drink
+     from) — third organizing axis after territories (workspaces) and
+     groves (thematic clusters). Optional second track per Goertzel's
+     Scout suggestion: message-embedding trajectories at ingest time
+     (allowed — AI at ingest, deterministic at read), partitioned into
+     cells as an alternative Phase 1. Also implementable and cheap:
+     complex eigenvalues of the concept-transition matrix as oscillatory
+     dialogue modes (the Ruelle–Pollicott-flavored "rhythm detector").
+     Honesty rule, per Goertzel himself: finite dialogues give "strange
+     transients rather than literal strange attractors" — we detect
+     habitual patterns of cognitive change and never claim proven chaos.
+     Segment-stream version buildable now; sender-resolved version
+     unlocks with CC-2B.
 
 Discarded (by decision, 2026-07-21): the surrounding speculative framework
 (THTW tilts, pctonions, Planckflakes, ZPE foam, hexasphere cosmology, and
