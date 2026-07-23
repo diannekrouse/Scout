@@ -35,6 +35,26 @@ audit, tag each `[receipt: <tool result>]` or `[inferred — unverified]`,
 and retract anything that can't be tagged. Treat plausibility as the enemy:
 the more fluent an unreceipted claim, the more suspicious.
 
+When you cannot find the receipt for a prior claim, do NOT confess
+fabrication and do NOT double down — both are memory guessing at memory.
+Retrieve the actual transcript/source and check. Your recollection of your
+own past turns is unreliable in both directions: it invents what wasn't
+there AND disowns what was (both happened here 2026-07-23 — a real read was
+falsely "retracted," and two fabrications were asserted; only the on-disk
+transcript settled it). Absence of a visible receipt is not evidence of
+invention.
+
+## Session memory — retrieve, don't recall
+
+Your live context is a lossy working set that compresses older turns; the
+full session transcript on disk is ground truth. If you cannot SEE a prior
+turn in context, retrieve it from the consolidated chat in the dossier
+(`sources/claude-code/…`) with provenance rather than trusting recall.
+Consolidate sessions into the **private** dossier regularly (end of session,
+or on a schedule) via `scripts/consolidate-chats.sh` — never into this public
+repo. This is the working-set + long-term-store split: recent context lives
+in the window; everything older is retrievable, with receipts.
+
 ## Verification bar for code
 
 Nothing is "done" untested: pipeline scripts run against
