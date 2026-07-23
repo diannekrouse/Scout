@@ -31,23 +31,48 @@
     return m;
   };
 
-  // Provenance contract: evidence anchors to a segment_id + intra-segment
-  // offsets; absolute lines are resolved HERE, at render time, so segment
-  // remapping (content-hash staleness) never strands a quotation.
+  // Anchor contract (CC-2A-R corrected: detect-and-regenerate, no remapping).
+  // Tuple: {segment, from_offset, to_offset, source_hash} + stored quote as
+  // the recovery key. Fast path: hash matches → resolve offsets directly.
+  // Recovery: hash mismatch → re-search the stored quotation verbatim across
+  // the current segment set → remap if found. Failure: mark UNVERIFIED —
+  // visible, never silent.
+  const fnv1a = (s) => {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return "fnv1a:" + h.toString(16).padStart(8, "0");
+  };
+  const srcHashes = new Map(Object.values(DATA.sources).map((s) => [s.file_id, fnv1a(s.lines.join("\n"))]));
+  const normQ = (s) => String(s || "").replace(/\s+/g, " ").trim();
   const resolveEvidence = (e) => {
     const seg = segById.get(e.evidence.segment);
     const src = DATA.sources[seg.file_id];
-    const from = seg.start_line + e.evidence.from_offset;
-    const to = seg.start_line + e.evidence.to_offset;
-    return { seg, src, from, to };
+    if (e.evidence.source_hash === srcHashes.get(seg.file_id)) {
+      const from = seg.start_line + e.evidence.from_offset;
+      const to = seg.start_line + e.evidence.to_offset;
+      return { seg, src, from, to, status: "verified",
+        quote: src.lines.slice(from - 1, to).join(" ").replace(/\s+/g, " ").trim() };
+    }
+    const q = normQ(e.quote);
+    if (q) {
+      for (const s2 of DATA.segments) {
+        const src2 = DATA.sources[s2.file_id];
+        for (let a = s2.start_line; a <= s2.end_line; a++) {
+          for (let b = a; b <= Math.min(s2.end_line, a + 5); b++) {
+            if (normQ(src2.lines.slice(a - 1, b).join(" ")) === q)
+              return { seg: s2, src: src2, from: a, to: b, status: "remapped", quote: q };
+          }
+        }
+      }
+    }
+    return { seg, src, from: 0, to: 0, status: "unverified", quote: q || "(quotation unavailable)" };
   };
-  const quoteOf = (e) => {
-    const { src, from, to } = resolveEvidence(e);
-    return src.lines.slice(from - 1, to).join(" ").replace(/\s+/g, " ").trim();
-  };
+  const quoteOf = (e) => resolveEvidence(e).quote;
   const citeOf = (e) => {
-    const { seg, from, to } = resolveEvidence(e);
-    return `${seg.segment_id} · L${from}–L${to} · ${e.date}`;
+    const ev = resolveEvidence(e);
+    if (ev.status === "unverified") return `${e.evidence.segment} · anchor stale — quotation not re-found · ${e.date}`;
+    const base = `${ev.seg.segment_id} · L${ev.from}–L${ev.to} · ${e.date}`;
+    return ev.status === "remapped" ? base + " · anchor remapped" : base;
   };
 
   // ---- relation grammar: sector bands (deg, 0=east, clockwise) ----
@@ -123,7 +148,9 @@
     $("#groundTitle").textContent = src.title;
     $("#groundMeta").innerHTML =
       `<span class="chip ${ws.color}">${esc(ws.name)}</span> <code>${esc(src.path)}</code> · ${esc(src.date)}`;
-    const lo = Math.max(1, from - 6), hi = Math.min(src.lines.length, to + 6);
+    const noHot = !(from >= 1 && to >= from);
+    const lo = noHot ? 1 : Math.max(1, from - 6);
+    const hi = noHot ? Math.min(src.lines.length, 16) : Math.min(src.lines.length, to + 6);
     let html = "";
     for (let n = lo; n <= hi; n++) {
       const hot = n >= from && n <= to;
@@ -138,16 +165,23 @@
   function showQuote(e, stick) {
     const card = $("#quoteCard");
     const from = conceptById.get(e.from), to = conceptById.get(e.to);
+    const ev = resolveEvidence(e);
     card.hidden = false;
     card.classList.toggle("stuck", !!stick);
-    $("#quoteText").textContent = "“" + quoteOf(e) + "”";
+    card.classList.toggle("warn", ev.status === "unverified");
+    $("#quoteText").textContent = "“" + ev.quote + "”";
     $("#quoteCite").textContent = citeOf(e);
     $("#quoteRel").innerHTML =
       `${esc(from.name)} <span class="reltype">${TYPES[e.type].label}</span> ${esc(to.name)}` +
+      (ev.status === "unverified" ? ` <span class="chip stale">unverified — source changed</span>` : "") +
+      (ev.status === "remapped" ? ` <span class="chip stale">anchor remapped</span>` : "") +
       (stick ? ` <button class="unstick" id="unstickBtn" title="Unpin">✕</button>` : "");
     if (stick) $("#unstickBtn").addEventListener("click", () => { state.sticky = null; clearQuote(); renderStage(); });
-    const ev = resolveEvidence(e);
-    showGround(ev.src.file_id, ev.from, ev.to, `Crossing evidence — ${ev.seg.segment_id}`);
+    if (ev.status === "unverified") {
+      showGround(ev.src.file_id, 0, 0, `Anchor stale — ${e.evidence.segment} (last known segment, no lines to trust)`);
+    } else {
+      showGround(ev.src.file_id, ev.from, ev.to, `Crossing evidence — ${ev.seg.segment_id}`);
+    }
   }
   function clearQuote() {
     if (state.sticky) return;
@@ -227,8 +261,9 @@
       const fresh = parseD(e.date) >= freshCut;
       const key = edgeKey(e);
       const stuck = state.sticky && edgeKey(state.sticky) === key;
-      if (fresh) g += `<path class="spoor" d="${d}"/>`;
-      g += `<path class="edge${stuck ? " stuck" : ""}" data-ek="${key}" d="${d}" stroke-width="${w}"` +
+      const unv = resolveEvidence(e).status === "unverified";
+      if (fresh && !unv) g += `<path class="spoor" d="${d}"/>`;
+      g += `<path class="edge${stuck ? " stuck" : ""}${unv ? " unv" : ""}" data-ek="${key}" d="${d}" stroke-width="${w}"` +
         (t.dash ? ` stroke-dasharray="${t.dash}"` : "") +
         (t.arrow ? ` marker-end="url(#arr)"` : "") + `/>`;
       g += `<path class="edgehit" data-ek="${key}" d="${d}"/>`;
@@ -277,8 +312,9 @@
     }
   }
   const citeParts = (e) => {
-    const { seg, from, to } = resolveEvidence(e);
-    return `${seg.segment_id} L${from}–${to}`;
+    const ev = resolveEvidence(e);
+    if (ev.status === "unverified") return `${e.evidence.segment} · stale`;
+    return `${ev.seg.segment_id} L${ev.from}–${ev.to}`;
   };
   const edgeKey = (e) => `${e.from}|${e.type}|${e.to}`;
   const edgeByKey = (k) => { const [f, t, o] = k.split("|"); return DATA.edges.find((e) => e.from === f && e.type === t && e.to === o); };

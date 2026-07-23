@@ -48,6 +48,13 @@ console.log("\n=== Derived edge quotations (review each for sense) ===\n");
 for (const e of DATA.edges) {
   if (!conceptIds.has(e.from)) err(`edge: unknown from ${e.from}`);
   if (!conceptIds.has(e.to)) err(`edge: unknown to ${e.to}`);
+  if (e.stale_demo) {
+    if (!e.quote) err(`stale-demo edge ${e.from}->${e.to}: missing stored quote (the recovery key)`);
+    if (!e.evidence.source_hash) err(`stale-demo edge ${e.from}->${e.to}: missing source_hash`);
+    console.log(`[${e.type}] ${e.from} → ${e.to}`);
+    console.log(`  STALE DEMO — anchor intentionally invalid; renders UNVERIFIED via recovery path\n`);
+    continue;
+  }
   const seg = segMap.get(e.evidence.segment);
   if (!seg) { err(`edge ${e.from}->${e.to}: unknown evidence segment ${e.evidence.segment}`); continue; }
   const src = DATA.sources[seg.file_id];
@@ -70,6 +77,7 @@ for (const e of DATA.edges) {
 
 // Date sanity
 for (const e of DATA.edges) {
+  if (e.stale_demo) continue;
   const seg = segMap.get(e.evidence.segment);
   const srcDate = seg ? DATA.sources[seg.file_id]?.date : null;
   if (srcDate && e.date !== srcDate) err(`edge ${e.from}->${e.to}: date ${e.date} != source date ${srcDate}`);

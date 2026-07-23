@@ -285,6 +285,13 @@ years late and finally walkable.`),
       evidence: { segment: "ts-s004", from_offset: 2, to_offset: 4 }, date: "2026-07-18" },
     { from: "library-card-bundles", to: "concept-graph", type: "depends_on",
       evidence: { segment: "gs-s004", from_offset: 2, to_offset: 4 }, date: "2026-07-18" },
+    // STALE-ANCHOR DEMO: hash will never match and the stored quotation
+    // exists in no current source, so this edge renders UNVERIFIED — the
+    // failure mode made visible, never silent. (build.mjs skips stamping.)
+    { from: "temporal-scrubber", to: "trustworthy-memory", type: "influences",
+      evidence: { segment: "voy-s001", from_offset: 2, to_offset: 3, source_hash: "fnv1a:00000000" },
+      quote: "The scrubber proves memory can be replayed without being rewritten.",
+      date: "2026-06-15", stale_demo: true },
   ],
 
   // Vocabulary (per dossier-system note): "territories" = WORKSPACES

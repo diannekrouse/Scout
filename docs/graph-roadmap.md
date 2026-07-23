@@ -23,19 +23,35 @@ ingesters. The reader never changes its nature.
 
 **Scout's edge (literally).** Because segments carry `start_line`/`end_line`,
 Scout can do what mainstream GraphRAG cannot: give every *edge* line-level
-provenance. **Evidence contract (aligned with the dossier-system session,
-ref CC-2A-R):** edge evidence anchors to a **segment_id, never a loose
-file+line pair** — absolute line ranges drift when sources update, and the
-pipeline's content-hash staleness system protects *segment* references
-(CC-2A-R is still evolving — depend on the *contract* "segments survive
-source updates," not on its current internals). For
-quotation precision, evidence carries intra-segment line offsets:
-`evidence: [{segment, from_offset, to_offset}]`, resolved to absolute lines
-at render time (`abs = segment.start_line + offset`), with the invariant that
-evidence lies entirely inside its segment. Quotations are **derived from the
-resolved lines at read time, never stored** — so a quote can never drift from
-its source, and every edge is machine-verifiable. `ConceptEdgeSchema` is
-`.passthrough()`, so this needs no schema change.
+provenance. **Evidence contract (confirmed with the dossier-system session,
+CC-2A-R corrected):** the staleness system **detects and regenerates — it
+never remaps**. `segments.json` records a content hash per source
+(`source_hashes`); on source change the source is flagged stale and
+`segment.py` *regenerates* its segments. Segment IDs (`<file_id>-sNNN`) are
+deterministic but positional. What IS stable: conversion is deterministic
+(same export → byte-identical markdown → identical segmentation), and for
+Telegram appends only the tail segment(s) of an extended month file can
+shift. Therefore the anchor tuple is:
+
+`evidence: {segment, from_offset, to_offset, source_hash}` **plus the
+verbatim quotation stored on the edge as its recovery key** (both stamped at
+edge-creation time — copy the hash from `segments.json.source_hashes`).
+
+Render-time algorithm: hash matches → resolve offsets
+(`abs = segment.start_line + offset`; evidence must lie inside its segment)
+and *derive* the displayed quote from the lines — display can never drift
+while the anchor is valid. Hash mismatch → re-search the stored quotation
+verbatim across the current segment set; found → **remap** the anchor;
+not found → mark the edge **unverified** and render it visibly flagged.
+Fast path = anchor; recovery path = quotation; failure mode = visible,
+never silent — staleness becomes evidence-verification working as designed.
+Curated substrates (the personal dossier) never auto-regenerate and use
+append-style merges, so their anchors are *more* stable — same tuple, relying
+on curation discipline rather than the hash cycle. `ConceptEdgeSchema` is
+`.passthrough()`, so none of this needs a schema change. Requested from the
+dossier session (their note 5, awaiting their checkpoint): `segment.py`
+stamping each segment with its file's `source_hash`, making anchor creation
+a field copy — **yes, wanted.**
 
 **Built so far (this branch).**
 
@@ -103,7 +119,9 @@ Build against these; invent nothing the substrate hasn't shown:
 
 - `index/concepts*.json` — merged concept registry (glob-merge, last-writer-wins)
 - `index/concept-graph.json` — typed edges, `{edges: [...]}` envelope
-- `index/segments.json` — segments, each carrying `source_date` (the time axis)
+- `index/segments.json` — segments, each carrying `source_date` (the time
+  axis); also records `source_hashes` (content hash per source — the
+  staleness signal anchors copy at creation time)
 - `index/workspaces.json` — workspace registry
 - `readSourceBody()` (`lib/dossier.ts`) — source text for the Ground
 - `source_url` on catalog concepts — the external-provenance pattern

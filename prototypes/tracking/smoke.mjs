@@ -65,6 +65,19 @@ if (!rows) errors.push("list view empty");
 await page.locator("#viewTrack").click();
 await page.waitForTimeout(150);
 
+// Stale-anchor edge renders UNVERIFIED (failure mode visible, never silent)
+await page.locator('.citem[data-c="trustworthy-memory"]').click();
+await page.waitForTimeout(250);
+const unv = await page.locator("#stage .edge.unv").count();
+console.log("unverified edges at trustworthy-memory:", unv);
+if (unv < 1) errors.push("stale-anchor edge not rendered as unverified");
+await page.locator('#stage .edgehit[data-ek="temporal-scrubber|influences|trustworthy-memory"]').hover();
+await page.waitForTimeout(200);
+const warn = await page.locator("#quoteCard.warn").count();
+const staleChip = await page.locator("#quoteRel .chip.stale").count();
+console.log("warn card:", warn, "| stale chip:", staleChip);
+if (!warn || !staleChip) errors.push("unverified quote card missing warn state/chip");
+
 // Screenshots: light then dark
 await page.screenshot({ path: dir + "shot-light.png" });
 await page.locator("#themeBtn").click();

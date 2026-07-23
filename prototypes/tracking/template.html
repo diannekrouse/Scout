@@ -21,6 +21,7 @@
     --spoor: #E89B5C;
     --mauve: #7A5C88;           /* category / relation pills */
     --mauve-wash: rgba(155, 123, 168, 0.16);
+    --stale: #B3452B;
     --ws1: #35803F; --ws1t: #2C6B35;   /* scout-dev  (validated) */
     --ws2: #E89B5C; --ws2t: #A05E22;   /* claude-code (validated) */
     --ws3: #2E72A8; --ws3t: #275F8C;   /* voyager    (validated) */
@@ -51,6 +52,7 @@
       --spoor: #E0A468;
       --mauve: #C9A9D6;
       --mauve-wash: rgba(176, 143, 192, 0.20);
+      --stale: #E07A56;
       --ws1: #1F7845; --ws1t: #7CC98A;   /* validated (dark) */
       --ws2: #CC803A; --ws2t: #E8A968;   /* validated (dark) */
       --ws3: #3F8CCB; --ws3t: #7FB8E4;   /* validated (dark) */
@@ -68,7 +70,7 @@
     --line: #E8DDC2; --line2: #D9CAA9;
     --accent: #3D8A44; --accent-wash: rgba(79,168,86,.14);
     --gold: #B6753A; --gold-wash: rgba(232,155,92,.20); --spoor: #E89B5C;
-    --mauve: #7A5C88; --mauve-wash: rgba(155,123,168,.16);
+    --mauve: #7A5C88; --mauve-wash: rgba(155,123,168,.16); --stale: #B3452B;
     --ws1: #35803F; --ws1t: #2C6B35; --ws2: #E89B5C; --ws2t: #A05E22; --ws3: #2E72A8; --ws3t: #275F8C;
     --edge-ink: rgba(58,45,36,.42); --btn-bg: #1F1611; --btn-fg: #FAF4E6;
     --shadow: 0 4px 24px -8px rgba(58,46,32,.10), 0 2px 6px -2px rgba(58,46,32,.05);
@@ -81,7 +83,7 @@
     --line: #3C3122; --line2: #4A3B2A;
     --accent: #6FC07A; --accent-wash: rgba(111,192,122,.14);
     --gold: #E0A468; --gold-wash: rgba(224,164,104,.16); --spoor: #E0A468;
-    --mauve: #C9A9D6; --mauve-wash: rgba(176,143,192,.20);
+    --mauve: #C9A9D6; --mauve-wash: rgba(176,143,192,.20); --stale: #E07A56;
     --ws1: #1F7845; --ws1t: #7CC98A; --ws2: #CC803A; --ws2t: #E8A968; --ws3: #3F8CCB; --ws3t: #7FB8E4;
     --edge-ink: rgba(216,204,180,.38); --btn-bg: #F4EBDA; --btn-fg: #221A15;
     --shadow: 0 4px 24px -8px rgba(0,0,0,.45), 0 2px 6px -2px rgba(0,0,0,.3);
@@ -175,6 +177,10 @@
   .edge.hover, .edge.stuck { stroke: var(--ink-bright); }
   .edgehit { fill: none; stroke: transparent; stroke-width: 16; cursor: pointer; }
   .spoor { fill: none; stroke: var(--spoor); stroke-width: 6; opacity: 0.30; stroke-linecap: round; }
+  .edge.unv { stroke: var(--stale); stroke-dasharray: 3 5; opacity: 0.85; }
+  .edge.unv.hover, .edge.unv.stuck { stroke: var(--stale); }
+  .chip.stale { color: var(--stale); background: color-mix(in srgb, var(--stale) 13%, transparent); font-size: 10px; border-radius: 999px; padding: 1px 8px; font-weight: 700; }
+  #quoteCard.warn #quoteCite { color: var(--stale); }
   .arrow { fill: var(--edge-ink); }
   .node { cursor: pointer; }
   .node .hit { fill: transparent; stroke: none !important; }

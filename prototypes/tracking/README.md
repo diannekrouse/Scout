@@ -7,13 +7,19 @@ reading the prints. No dependencies, no build step needed to view; open
 
 ## What it demonstrates
 
-- **Edges are quotations.** Hover any connection (or table row) and you read
-  the verbatim sentence where two ideas touched — never stored, always
-  derived. Evidence anchors to a **segment_id + intra-segment line offsets**
-  (`{segment, from_offset, to_offset}`), resolved to absolute lines at render
-  time: segments are the protected provenance contract (they survive source
-  updates via the pipeline's content-hash staleness system), while offsets
-  keep quotations line-precise. A quote can never drift from its source.
+- **Edges are quotations, with a self-healing anchor contract.** Evidence
+  anchors to `{segment, from_offset, to_offset, source_hash}` plus the
+  verbatim quotation stored as a **recovery key** (both stamped at
+  edge-creation time — here, by `build.mjs`). At render: hash matches →
+  offsets resolve to absolute lines and the displayed quote is *derived* from
+  them (drift-impossible); hash mismatch → the stored quotation is
+  re-searched verbatim across the current segment set and the anchor
+  **remapped** if found; not found → the edge renders **unverified** — amber,
+  dotted, stored quote flagged, no line highlight. Fast path = anchor;
+  recovery path = quotation; failure mode = visible, never silent. (The
+  pipeline's staleness system detects and *regenerates* segments — it never
+  remaps anchors — hence this contract.) One deliberately stale demo edge
+  (`temporal-scrubber → trustworthy-memory`) exercises the failure path.
 - **The Track view.** One concept at center; neighbors fan out radially,
   sorted by *meaning*, not physics — angular sector = relation type
   (depends on ↑, evolved into →, contrasts with ←, …), distance = evidence
