@@ -133,10 +133,9 @@ Build against these; invent nothing the substrate hasn't shown:
 - `index/workspaces.json` — workspace registry
 - `readSourceBody()` (`lib/dossier.ts`) — source text for the Ground
 - `source_url` on catalog concepts — the external-provenance pattern
-- Dossier-side design scrolls (not in this repo): the knowledge-graph-explorer
-  and import/review-UI roadmaps under `workspaces/omegahive/scout-integration/`
-  in the private substrate — consult via the dossier-system session or a
-  compiled bundle.
+- Dossier-side design scrolls (not in this repo): knowledge-graph-explorer and
+  import/review-UI roadmaps living in the private substrate — consult via the
+  dossier-system session or a compiled bundle.
 
 **Vocabulary:** *territories* = **workspaces** (platform/thematic axis, node
 color + shape). The rail's thematic concept clusters are **groves** — a
@@ -219,33 +218,23 @@ theorem constants do not.
    - ECAN-style attention overlay (`attention.json`, overlay-only):
      importance spreading along verified edges from actively-walked
      concepts, with decay; drives Trailhead ordering. Substrate untouched.
-   - Attractor analysis — now with a concrete algorithm: **the Chaos
-     Language Algorithm (CLA)**, from Goertzel's implementation-oriented
-     spec (chunks = repeated sequential blocks / "and-then" structure;
-     meta-symbols = categories of contextually substitutable tokens /
-     "one-of-these" structure; joint induction under a two-part MDL
-     objective; the spec's appendix is written directly for coding agents).
-     Scout-native Phase 1: **concept assignment IS the partition** — the
-     spec allows a "problem-specific symbolic dynamics partition," and
-     labeling each message/segment by its concepts symbolizes the dialogue
-     trajectory with receipts intact. Then: chunk rules = a group's
-     habitual conversational moves; meta-symbols = emergent categories
-     (data-driven groves; a dynamics-based cousin of entity resolution);
-     the induced grammar per chat/agent/epoch = its attractor signature;
-     grammar drift across time windows = bifurcation tracking. Vocabulary:
-     these are **waterholes** (basins the conversation returns to drink
-     from) — third organizing axis after territories (workspaces) and
-     groves (thematic clusters). Optional second track per Goertzel's
-     Scout suggestion: message-embedding trajectories at ingest time
-     (allowed — AI at ingest, deterministic at read), partitioned into
-     cells as an alternative Phase 1. Also implementable and cheap:
-     complex eigenvalues of the concept-transition matrix as oscillatory
-     dialogue modes (the Ruelle–Pollicott-flavored "rhythm detector").
-     Honesty rule, per Goertzel himself: finite dialogues give "strange
-     transients rather than literal strange attractors" — we detect
-     habitual patterns of cognitive change and never claim proven chaos.
-     Segment-stream version buildable now; sender-resolved version
-     unlocks with CC-2B.
+   - Attractor analysis — detect the basins a dialogue keeps returning to
+     (our **waterholes**), modeling after Goertzel's published direction on
+     grammatical structure in strange-attractor dynamics. Scout-native
+     approach: concept (and later speech-act) assignment already symbolizes
+     each dialogue as a trajectory with receipts intact, so we induce a
+     compact grammar over those symbol streams — recurring structure = a
+     group's habitual moves; the per-chat/epoch grammar = its attractor
+     signature; drift across time windows = bifurcation tracking. Waterholes
+     are the third organizing axis after territories (workspaces) and groves
+     (thematic clusters). Cheap complementary signal: complex eigenvalues of
+     the concept-transition matrix as oscillatory dialogue modes (a "rhythm
+     detector"). Honesty rule (per Goertzel): finite dialogues yield strange
+     transients rather than literal strange attractors — we detect habitual
+     patterns of cognitive change, never claim proven chaos. Segment-stream
+     version buildable now; sender-resolved version unlocks with CC-2B.
+     (Internals of Goertzel's own algorithm live in the private dossier, not
+     this public repo, pending his publication — model after it there.)
 
 Discarded (by decision, 2026-07-21): the surrounding speculative framework
 (THTW tilts, pctonions, Planckflakes, ZPE foam, hexasphere cosmology, and

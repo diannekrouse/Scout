@@ -48,3 +48,7 @@ sample-dossier/curation.json
 # editor
 .vscode/
 .idea/
+
+# Privacy guard — local-only sensitive denylist (never commit)
+.privacy-denylist
+privacy-audit.log

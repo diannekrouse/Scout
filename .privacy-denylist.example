@@ -1,0 +1,18 @@
+# Local-only privacy denylist for scripts/check_private.py
+#
+# Copy this file to `.privacy-denylist` (which is git-IGNORED) and add one
+# regex per line. Any staged change matching a pattern BLOCKS the commit.
+#
+# Keep genuinely-sensitive names ONLY in the local `.privacy-denylist`, never
+# in this committed example — the whole point is that the sensitive strings
+# never enter the repo, not even in the guard's own config.
+#
+# Lines starting with `#` are comments. Patterns are Python regexes.
+#
+# Generic examples (replace with your collaborators' private identifiers):
+#   (?i)\binternal-project-codename\b
+#   (?i)some_private_schema_type
+#   collaborator@example\.com
+#
+# Email addresses are flagged automatically by the script — you don't need to
+# list them here (add specific ones only if you want a custom message).
