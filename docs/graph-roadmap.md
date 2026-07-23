@@ -165,3 +165,50 @@ pseudonymous IDs as the only identity that ever enters the substrate.
 2. Run Phase 1 against a real dossier; eyeball the graph on the concept pages.
 3. Phase 3 behind it, gated by the verification pass.
 4. Port Tracking (Phase 5) once real edges exist to walk.
+
+## Appendix — research levers (vetted imports; sources quarantined)
+
+Triage of external research notes (July 2026). Rule applied, and to be kept:
+**import mathematical tools, quarantine cosmology.** Scout's identity is
+checkable claims; speculative physics never enters the substrate as
+assertions. Everything below is a deterministic, index-time capability.
+
+Verified source: arXiv:2607.20157 (Cao–Lu–Zhao) — percolated
+vertex-transitive graphs keep perfect matchings and near-optimal packings of
+edge-disjoint 2-factors when average retained degree exceeds ~C·log n.
+**Caveat that must travel with any use:** the theorems require
+vertex-transitivity (perfect symmetry). Scout's concept graph is not
+vertex-transitive, so the *questions and diagnostics* transplant; the
+theorem constants do not.
+
+1. **Percolation health diagnostics.** The verified-edge fraction after
+   staleness events makes the concept graph literally a percolated graph.
+   Report its survival state after re-segmentation sweeps: giant-component
+   coverage, islands broken off, concepts below k verified crossings.
+2. **Patrols (cycle covers).** 2-factors = closed trails visiting every
+   concept. Auto-generate closed walking routes over a grove; edge-disjoint
+   decompositions give independent patrols that never reuse a crossing.
+   Extends the trail/harvest loop with plain cycle-decomposition theory.
+3. **Ollivier–Ricci curvature.** Negative-curvature edges are bridges
+   between communities; surface them as first-class "bridge crossings."
+   (The honest version of the notes' "discrete curvature" lever.)
+4. **Heat-kernel expansion (Phase-2 upgrade).** Heat-kernel / personalized-
+   PageRank diffusion from pinned seeds as a graded relatedness score for
+   bundle expansion, replacing blunt 1-hop when the graph is dense enough.
+5. **Goertzel bridges** (pairs with the hive/swarm direction):
+   - `scout-to-metta.py` — export concepts/edges/anchors as Atomese/MeTTa so
+     OpenCog Hyperon agents load Scout as a provenance-grounded AtomSpace;
+     evidence anchors ride as metadata. Positions Scout as the memory
+     substrate with receipts for agent swarms.
+   - ECAN-style attention overlay (`attention.json`, overlay-only):
+     importance spreading along verified edges from actively-walked
+     concepts, with decay; drives Trailhead ordering. Substrate untouched.
+   - Attractor analysis (post-CC-2B): the sender–concept temporal stream
+     supports recurrence/motif mining — the concept-configurations a group
+     keeps returning to, each return visit citing its lines. Deterministic
+     dynamics analysis; no runtime model.
+
+Discarded (by decision, 2026-07-21): the surrounding speculative framework
+(THTW tilts, pctonions, Planckflakes, ZPE foam, hexasphere cosmology, and
+the unverified isomorphism chains). Generative reading, not substrate
+material — revisit only if independently established.
